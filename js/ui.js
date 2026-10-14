@@ -2,15 +2,9 @@ const CASES = [['#f26b1d', 'Orange'], ['#8d8f94', 'Gray'], ['#1f2023', 'Black'],
 const $ = id => document.getElementById(id);
 
 export function initUI({ S, midi, persist, resetView, start, setVariant, setCase, setGrid, setMidi }) {
-  const tabs = [...document.querySelectorAll('#tabs [role=tab]')];
-  const paintTabs = () => tabs.forEach(t => { const on = t.dataset.v === S.variant; t.setAttribute('aria-selected', String(on)); t.tabIndex = on ? 0 : -1; });
-  tabs.forEach((t, i) => {
-    t.addEventListener('click', () => { start(); setVariant(t.dataset.v); paintTabs(); });
-    t.addEventListener('keydown', e => {
-      const n = e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0; if (!n) return;
-      const o = tabs[(i + n + tabs.length) % tabs.length]; o.focus(); o.click();
-    });
-  });
+  const tabs = [...document.querySelectorAll('#tabs a')];
+  const paintTabs = () => tabs.forEach(t => { if (t.dataset.v === S.variant) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
+  tabs.forEach(t => t.addEventListener('click', start));
   paintTabs();
   const modal = $('modal');
   const open = () => { start(); modal.showModal(); refreshMidi(); };
