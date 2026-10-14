@@ -27,8 +27,9 @@ const L2 = {
     ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
   slots: [],
 };
-// Idea 3 starts from Idea 2. Keys are rounded rectangles at 75% of the
-// 17.4 mm cap width; pitch (PITCH) is unchanged. 2.4 mm corners suit a ~13 mm pad.
+// Idea 3 starts from Idea 2. Finished key width is 75% of the current
+// 19 mm cap (17.4 mm profile plus the 0.8 mm bevel each side). Pitch is unchanged.
+// 2.4 mm corners on the ~12.7 mm profile suit a small hardware pad.
 const L3 = {
   D: 150, natZ: 61.4, sharpZ: 42.6,
   lcd: { x: -20, z: -50, w: 110, h: 27.5, cols: 320, rows: 80 },
@@ -108,8 +109,10 @@ export function buildModel(variant = '2') {
   // plate holes
   const holes = [];
   const plateShape = rr(new THREE.Shape(), 0, 0, W, D, 6);
-  // Idea 1 and 2 leave keyW/keyR unset, so the cap stays the original 17.4 mm square, r 2.2.
-  const keyScale = V.keyW ?? 1, capW = 17.4 * keyScale, capD = 17.4, capR = V.keyR ?? 2.2;
+  // Idea 1 and 2 leave keyW/keyR unset: profile 17.4 mm square, corner 2.2.
+  // The bevel adds 0.8 mm per side, so keyW scales that finished width.
+  const BEVEL = 0.8, keyScale = V.keyW ?? 1, capD = 17.4, capR = V.keyR ?? 2.2;
+  const capW = (capD + 2 * BEVEL) * keyScale - 2 * BEVEL;
   const holeW = 14.2 * keyScale, holeD = 14.2, wellW = 13.6 * keyScale, wellD = 13.6;
   const capGeo = (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, capW, capD, capR), 5, 0.8); g.translate(0, 0.8, 0); return g; })();
   const tactGeo = (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, 9.6, 3.6, 1.6), 1.8, 0.5); g.translate(0, 0.5, 0); return g; })();
