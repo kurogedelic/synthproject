@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE } from './model.js';
-import { Synth } from './synth.js';
-import { Midi } from './midi.js';
-import { Lcd } from './lcd.js';
-import { drawScreen } from './screens.js';
-import { initUI } from './ui.js';
+import { buildModel, BASE_NOTE } from './model.js?v=3';
+import { Synth } from './synth.js?v=3';
+import { Midi } from './midi.js?v=3';
+import { Lcd } from './lcd.js?v=3';
+import { drawScreen } from './screens.js?v=3';
+import { initUI } from './ui.js?v=3';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {
@@ -16,6 +16,8 @@ const DEFAULTS = {
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
 const S = { ...DEFAULTS, ...saved, params: { ...DEFAULTS.params, ...(saved.params || {}) } };
+const hv = { '#idea1': '1', '#idea2': '2' }[location.hash];
+if (hv) S.variant = hv;
 S.power = true; S.screen = 0; S.lastNote = null; S.touched = {}; S.scope = null;
 let saveTimer = 0;
 const persist = () => {
@@ -250,8 +252,13 @@ function switchVariant(v) {
   allOff(); ptrs.clear(); vis.clear(); hover(null);
   if (controls) controls.enabled = true;
   S.variant = v; persist();
+  try { history.replaceState(null, '', '#idea' + v); } catch {}
   loadModel(v); resetView();
 }
+addEventListener('hashchange', () => {
+  const v = { '#idea1': '1', '#idea2': '2' }[location.hash];
+  if (v) { switchVariant(v); ui.paintTabs(); }
+});
 loadModel(S.variant);
 
 // ---- ui

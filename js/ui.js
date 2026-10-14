@@ -65,5 +65,5 @@ export function initUI({ S, midi, persist, resetView, start, setVariant, setCase
     keys.forEach(k => { const i = document.createElement('i'); if (k) { i.textContent = k; i.className = kind === 'n' ? 'n' : 's'; } else i.className = 'gap'; r.append(i); });
     return r;
   }));
-  return { refreshMidi };
+  return { refreshMidi, paintTabs };
 }
