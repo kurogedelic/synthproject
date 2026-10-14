@@ -8,9 +8,9 @@ import { Lcd } from './lcd.js';
 import { drawScreen } from './screens.js';
 import { initUI } from './ui.js';
 
-const KEY = 'synthproject:v1';
+const KEY = 'synthproject:v2';
 const DEFAULTS = {
-  caseColor: '#f26b1d', grid: true, midiIn: 'all', midiOut: 'off', channel: 0, octave: 0,
+  caseColor: '#8d8f94', grid: true, midiIn: 'all', midiOut: 'off', channel: 0, octave: 0,
   params: { level: 100, cutoff: 90, reso: 20, attack: 6, release: 30, wave: 0 },
 };
 let saved = {};

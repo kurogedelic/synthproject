@@ -58,7 +58,7 @@ export function buildModel() {
   const pickables = [], controls = [];
   const byOff = new Map(), byId = {};
 
-  const caseMat = new THREE.MeshPhysicalMaterial({ color: '#f26b1d', roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.4 });
+  const caseMat = new THREE.MeshPhysicalMaterial({ color: '#8d8f94', roughness: 0.42, clearcoat: 0.35, clearcoatRoughness: 0.4 });
   const darkMat = new THREE.MeshStandardMaterial({ color: '#0d0d0f', roughness: 0.8 });
   const blackPlastic = new THREE.MeshPhysicalMaterial({ color: '#242428', roughness: 0.45, clearcoat: 0.3 });
   const knobMat = new THREE.MeshPhysicalMaterial({ color: '#1d1e21', metalness: 0.65, roughness: 0.32, clearcoat: 0.2 });
