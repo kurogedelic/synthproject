@@ -16,7 +16,8 @@ const L1 = {
     ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11], ['set4', 'enc', 145.5, -17.3, 6, 11]],
   slots: [61.8, 82.7, 103.6, 124.5, 145.5].map(x => [x, -30]),
 };
-// Idea 2: deeper body, same 110×27.5 mm / 320×80 LCD as Idea 1, four knobs, no buttons between the sharps
+// Idea 2: deeper body, four knobs, no buttons between the sharps.
+// LCD matches Idea 1: 110 x 27.5 mm, 320 x 80.
 const L2 = {
   D: 150, natZ: 61.4, sharpZ: 42.6,
   lcd: { x: -20, z: -50, w: 110, h: 27.5, cols: 320, rows: 80 },

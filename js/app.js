@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=5';
-import { Synth } from './synth.js?v=5';
-import { Midi } from './midi.js?v=5';
-import { Lcd } from './lcd.js?v=5';
-import { drawScreen } from './screens.js?v=5';
-import { initUI } from './ui.js?v=5';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=6';
+import { Synth } from './synth.js?v=6';
+import { Midi } from './midi.js?v=6';
+import { Lcd } from './lcd.js?v=6';
+import { drawScreen } from './screens.js?v=6';
+import { initUI } from './ui.js?v=6';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {
@@ -16,7 +16,7 @@ const DEFAULTS = {
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
 const S = { ...DEFAULTS, ...saved, params: { ...DEFAULTS.params, ...(saved.params || {}) } };
-const ideaFromHash = hash => IDEAS.find(i => hash === '#idea' + i.id)?.id ?? null;
+const ideaFromHash = hash => IDEAS.find(i => hash === '#idea' + i.id)?.id;
 const hv = ideaFromHash(location.hash);
 if (hv) S.variant = hv;
 S.power = true; S.screen = 0; S.lastNote = null; S.touched = {}; S.scope = null;
@@ -79,90 +79,99 @@ function loadModel(v) {
   lcdDirty = true; dirty = true;
 }
 
-const camera = new THREE.PerspectiveCamera(28, 1, 10, 3000);
+const camera = new THREE.PerspectiveCamera(28, 1, 10, 8000);
 const target = new THREE.Vector3(0, -8, 0);
-// Straight-on front: previous elevation, no sideways offset. This is also the load / reset view.
-const FRONT = new THREE.Vector3(0, 0.92, Math.hypot(0.3, 0.55)).normalize();
-const _frontSph = new THREE.Spherical().setFromVector3(FRONT);
-const VIEWS = {
-  front: FRONT,
-  top: new THREE.Vector3().setFromSphericalCoords(1, 0.08, _frontSph.theta),
-  side: new THREE.Vector3().setFromSphericalCoords(1, _frontSph.phi, Math.PI / 2),
+// Directions from the orbit target toward the camera. Front is centered on the
+// player's side (no yaw). Perspective keeps the previous three-quarter angle.
+const VIEW_DIR = {
+  front: new THREE.Vector3(0, 0.92, 0.55),
+  top: new THREE.Vector3(0, 1, 0.035),
+  side: new THREE.Vector3(1, 0.62, 0),
+  persp: new THREE.Vector3(-0.3, 0.92, 0.55),
 };
-let dirty = true, lcdDirty = true, camAnim = null, ui;
+const VIEW_ANG = Object.fromEntries(Object.entries(VIEW_DIR).map(([k, v]) => [k, new THREE.Spherical().setFromVector3(v.clone().normalize())]));
+const _dir = new THREE.Vector3(), _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _camUp = new THREE.Vector3(), _sph = new THREE.Spherical();
+let dirty = true, lcdDirty = true, viewAnim = null, activeView = 'front';
 const mark = () => { dirty = true; };
-const _sph = new THREE.Spherical(), _off = new THREE.Vector3(), _tgt = new THREE.Vector3();
 
-function fitDistance() {
-  const vh = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const hw = 215, hh = model.depth / 2 + 40;
-  return Math.max(hw / (vh * camera.aspect), hh / vh) * 1.22;
-}
-function calmControls() {
-  controls._sphericalDelta.set(0, 0, 0);
-  controls._panOffset.set(0, 0, 0);
-  controls._scale = 1;
-}
-function applySph(s, tgt) {
-  _off.setFromSpherical(s);
-  controls.target.copy(tgt);
-  camera.position.copy(tgt).add(_off);
-  camera.lookAt(tgt);
-}
-function lerpAngle(a, b, t) {
-  let d = b - a;
-  while (d > Math.PI) d -= Math.PI * 2;
-  while (d < -Math.PI) d += Math.PI * 2;
-  return a + d * t;
+function frameDistance(dir) {
+  _fwd.copy(dir).negate();
+  _right.crossVectors(_fwd, _camUp.set(0, 1, 0));
+  if (_right.lengthSq() < 1e-8) _right.set(1, 0, 0); else _right.normalize();
+  _camUp.crossVectors(_right, _fwd).normalize();
+  const hx = 200, y0 = -26 - target.y, y1 = 24 - target.y, hz = model.depth / 2 + 24;
+  let maxR = 1, maxU = 1;
+  for (const x of [-hx, hx]) for (const y of [y0, y1]) for (const z of [-hz, hz]) {
+    maxR = Math.max(maxR, Math.abs(x * _right.x + y * _right.y + z * _right.z));
+    maxU = Math.max(maxU, Math.abs(x * _camUp.x + y * _camUp.y + z * _camUp.z));
+  }
+  const v = Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5));
+  const h = v * Math.max(camera.aspect, 0.25);
+  return Math.max(maxR / h, maxU / v) * 1.28;
 }
 function resize() {
-  const w = innerWidth, h = innerHeight;
-  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-  if (camAnim) camAnim.endR = fitDistance();
-  else {
-    const dir = camera.position.clone().sub(controls.target);
-    camera.position.copy(controls.target).addScaledVector(dir.normalize(), fitDistance());
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  if (viewAnim) viewAnim.r1 = frameDistance(_dir.copy(VIEW_DIR[viewAnim.name]).normalize());
+  else if (controls) {
+    _dir.copy(camera.position).sub(controls.target);
+    if (_dir.lengthSq() > 1) {
+      _dir.normalize();
+      camera.position.copy(controls.target).addScaledVector(_dir, frameDistance(_dir));
+    }
   }
   mark();
 }
-// `animate` is for the view buttons and Reset view. Load and design changes snap so the first frame is already framed.
-function goView(name, animate) {
-  const dir = VIEWS[name];
-  if (!dir) return;
-  _sph.setFromVector3(dir);
-  const endPhi = _sph.phi, endTheta = _sph.theta, endR = fitDistance();
-  ui?.paintView(name);
-  calmControls();
-  const reduce = !animate || matchMedia('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) {
-    camAnim = null;
-    applySph(new THREE.Spherical(endR, endPhi, endTheta), target);
+function placeCamera(name, animate = true) {
+  if (!VIEW_DIR[name]) return;
+  const dist = frameDistance(_dir.copy(VIEW_DIR[name]).normalize());
+  const goal = new THREE.Spherical().setFromVector3(_dir.multiplyScalar(dist));
+  controls._sphericalDelta.set(0, 0, 0);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const curOff = camera.position.clone().sub(controls.target);
+  if (!animate || reduce || curOff.lengthSq() < 1) {
+    viewAnim = null;
+    camera.position.copy(target).add(_dir);
+    controls.target.copy(target);
+    camera.lookAt(target);
     controls.update();
-    mark();
-    return;
+  } else {
+    const cur = new THREE.Spherical().setFromVector3(curOff);
+    let dTheta = goal.theta - cur.theta;
+    if (dTheta > Math.PI) dTheta -= Math.PI * 2;
+    else if (dTheta < -Math.PI) dTheta += Math.PI * 2;
+    viewAnim = { t0: performance.now(), dur: 600, theta0: cur.theta, dTheta, phi0: cur.phi, phi1: goal.phi, r0: cur.radius, r1: goal.radius, name };
   }
-  const start = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
-  camAnim = {
-    startPhi: start.phi, startTheta: start.theta, startR: start.radius || endR,
-    endPhi, endTheta, endR, startTarget: controls.target.clone(), t0: performance.now(), dur: 520,
-  };
+  activeView = name;
+  ui.paintViews(name);
   mark();
 }
-function tickCamera(now) {
-  if (!camAnim) return false;
-  const a = camAnim;
+function stepView(now) {
+  const a = viewAnim;
+  if (!a) return false;
   const t = Math.min(1, (now - a.t0) / a.dur);
-  const e = 1 - (1 - t) ** 3;
-  _tgt.copy(a.startTarget).lerp(target, e);
-  applySph(new THREE.Spherical(
-    a.startR + (a.endR - a.startR) * e,
-    a.startPhi + (a.endPhi - a.startPhi) * e,
-    lerpAngle(a.startTheta, a.endTheta, e),
-  ), _tgt);
-  if (t >= 1) { camAnim = null; calmControls(); controls.update(); }
+  const e = t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2;
+  _sph.set(a.r0 + (a.r1 - a.r0) * e, a.phi0 + (a.phi1 - a.phi0) * e, a.theta0 + a.dTheta * e);
+  camera.position.setFromSpherical(_sph).add(target);
+  controls.target.copy(target);
+  camera.lookAt(target);
+  if (t >= 1) viewAnim = null;
   return true;
 }
-function resetView(animate) { goView('front', animate === true); }
+function syncViewHighlight() {
+  _sph.setFromVector3(_dir.copy(camera.position).sub(controls.target));
+  let best = null, bestD = 0.16;
+  for (const [name, ang] of Object.entries(VIEW_ANG)) {
+    let dth = Math.abs(_sph.theta - ang.theta);
+    if (dth > Math.PI) dth = Math.PI * 2 - dth;
+    const dph = Math.abs(_sph.phi - ang.phi);
+    const d = _sph.phi < 0.2 && ang.phi < 0.2 ? dph : Math.hypot(dth, dph);
+    if (d < bestD) { best = name; bestD = d; }
+  }
+  if (best !== activeView) { activeView = best; ui.paintViews(best); }
+}
+function resetView() { placeCamera('front', true); }
 
 // ---- interaction (registered before OrbitControls so it can claim events)
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -228,9 +237,9 @@ canvas.addEventListener('wheel', e => {
 }, { passive: false, capture: true });
 
 controls = new OrbitControls(camera, canvas);
-Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 120, maxDistance: 900, maxPolarAngle: Math.PI * 0.47, minPolarAngle: 0.06 });
-controls.addEventListener('change', mark);
-controls.addEventListener('start', () => { camAnim = null; ui?.paintView(null); });
+Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 120, maxDistance: 4000, maxPolarAngle: Math.PI * 0.47, minPolarAngle: 0 });
+controls.addEventListener('change', () => { mark(); if (!viewAnim) syncViewHighlight(); });
+controls.addEventListener('start', () => { viewAnim = null; });
 canvas.style.touchAction = 'none';
 
 // ---- notes
@@ -315,25 +324,22 @@ addEventListener('keydown', start, { once: true, capture: true });
 
 // ---- variants
 function switchVariant(v) {
-  if (!IDEAS.some(i => i.id === v)) return;
-  if (v !== S.variant) {
-    allOff(); ptrs.clear(); vis.clear(); hover(null);
-    if (controls) controls.enabled = true;
-    S.variant = v; persist();
-    loadModel(v); resetView(false);
-  }
+  if (!IDEAS.some(i => i.id === v) || v === S.variant) return;
+  allOff(); ptrs.clear(); vis.clear(); hover(null);
+  if (controls) controls.enabled = true;
+  S.variant = v; persist();
   try { history.replaceState(null, '', '#idea' + v); } catch {}
-  ui?.paintIdeas();
+  loadModel(v); resetView();
 }
 addEventListener('hashchange', () => {
   const v = ideaFromHash(location.hash);
-  if (v) switchVariant(v);
+  if (v) { switchVariant(v); ui.paintIdeas(); }
 });
 loadModel(S.variant);
 
 // ---- ui
-ui = initUI({
-  S, midi, persist, resetView, start, IDEAS, setView: name => goView(name, true),
+const ui = initUI({
+  S, midi, persist, resetView, start, IDEAS, setView: name => placeCamera(name, true),
   setCase: c => { S.caseColor = c; model.setCaseColor(c); mark(); persist(); },
   setGrid: g => { S.grid = g; model.setGrid(g); mark(); persist(); },
   setMidi: () => { midi.inId = S.midiIn; midi.outId = S.midiOut; midi.channel = S.channel; lcdDirty = true; persist(); },
@@ -341,12 +347,12 @@ ui = initUI({
 
 // ---- loop
 addEventListener('resize', resize);
-resetView(); resize();
+placeCamera('front', false); resize();
 let lastLcd = 0, hotWas = false;
 function frame(now) {
   requestAnimationFrame(frame);
-  if (tickCamera(now)) dirty = true;
   if (controls.update()) dirty = true;
+  if (stepView(now)) { if (!viewAnim) controls.update(); dirty = true; }
   if (model.update()) dirty = true;
   const live = S.power && S.screen === 1 && !!synth.ctx;
   const hot = Object.values(S.touched).some(t => now - t < 1300);

@@ -43,9 +43,9 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
   paintIdeas();
 
   const viewBtns = [...document.querySelectorAll('#views [data-view]')];
-  const paintView = name => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+  const paintViews = name => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(!!name && b.dataset.view === name)));
   viewBtns.forEach(b => b.addEventListener('click', () => { start(); setView(b.dataset.view); }));
-  paintView('front');
+  paintViews('front');
   const modal = $('modal');
   const open = () => { start(); modal.showModal(); refreshMidi(); };
   $('info').addEventListener('click', open);
@@ -68,6 +68,11 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
   const grid = $('grid'); grid.checked = S.grid;
   grid.addEventListener('change', () => setGrid(grid.checked));
   $('reset').addEventListener('click', () => resetView(true));
+
+  const viewBtns = [...document.querySelectorAll('#views button')];
+  const paintViews = (name) => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+  viewBtns.forEach(b => b.addEventListener('click', () => { start(); setView(b.dataset.view); }));
+  paintViews('front');
 
   // midi
   const sIn = $('midi-in'), sOut = $('midi-out'), sCh = $('midi-ch');
@@ -99,5 +104,5 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
     keys.forEach(k => { const i = document.createElement('i'); if (k) { i.textContent = k; i.className = kind === 'n' ? 'n' : 's'; } else i.className = 'gap'; r.append(i); });
     return r;
   }));
-  return { refreshMidi, paintIdeas, paintView };
+  return { refreshMidi, paintIdeas, paintViews };
 }

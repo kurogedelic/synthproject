@@ -49,18 +49,19 @@ button, select { font: inherit; color: inherit; }
 #design-menu a:hover { color: var(--fg); text-decoration: none; background: #2a2c31; }
 #design-menu a[aria-selected="true"] { background: #3a3c44; color: var(--fg); }
 #views {
-  position: fixed; z-index: 2; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
-  display: flex; gap: 8px;
+  position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 2; display: flex; gap: 2px; padding: 3px; height: 40px; border-radius: 20px;
+  background: rgba(30, 31, 36, .72); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
 }
 #views button {
-  width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; padding: 0; cursor: pointer;
-  background: rgba(30, 31, 36, .72); border: 1px solid rgba(255, 255, 255, .12); color: var(--dim);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); touch-action: manipulation;
-  transition: background .15s, color .15s, transform .15s;
+  width: 36px; height: 34px; border: 0; border-radius: 17px; padding: 0; cursor: pointer;
+  display: grid; place-items: center; background: transparent; color: var(--dim);
+  touch-action: manipulation; transition: background .15s, color .15s, transform .15s;
 }
-#views button:hover { background: rgba(48, 50, 57, .85); color: var(--fg); }
+#views button:hover { color: var(--fg); }
+#views button[aria-pressed="true"] { background: #3a3c44; color: var(--fg); }
 #views button:active { transform: scale(.94); }
-#views button[aria-pressed="true"] { background: #3a3c44; color: var(--fg); border-color: rgba(255, 255, 255, .28); }
 
 dialog {
   width: min(520px, calc(100vw - 32px)); max-height: min(82vh, 720px); padding: 0; margin: auto;
@@ -73,6 +74,9 @@ dialog::backdrop { background: rgba(8, 9, 11, .55); -webkit-backdrop-filter: blu
 @media (prefers-reduced-motion: reduce) {
   dialog[open] { animation: none; }
   #info, #design-btn, #design-btn .chev, #views button { transition: none; }
+}
+@media (max-width: 380px) {
+  #views button { width: 32px; }
 }
 header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px 20px; border-bottom: 1px solid var(--line); }
 h2 { margin: 0; font-size: 15px; font-weight: 600; }
