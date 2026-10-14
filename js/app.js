@@ -10,7 +10,7 @@ import { initUI } from './ui.js';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {
-  caseColor: '#8d8f94', grid: true, midiIn: 'all', midiOut: 'off', channel: 0, octave: 0,
+  caseColor: '#8d8f94', variant: '2', grid: true, midiIn: 'all', midiOut: 'off', channel: 0, octave: 0,
   params: { level: 100, cutoff: 90, reso: 20, attack: 6, release: 30, wave: 0 },
 };
 let saved = {};
@@ -22,8 +22,8 @@ const persist = () => {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      const { caseColor, grid, midiIn, midiOut, channel, octave, params } = S;
-      localStorage.setItem(KEY, JSON.stringify({ caseColor, grid, midiIn, midiOut, channel, octave, params }));
+      const { caseColor, variant, grid, midiIn, midiOut, channel, octave, params } = S;
+      localStorage.setItem(KEY, JSON.stringify({ caseColor, variant, grid, midiIn, midiOut, channel, octave, params }));
     } catch {}
   }, 300);
 };
@@ -56,24 +56,35 @@ sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.radius
 Object.assign(sun.shadow.camera, { left: -220, right: 220, top: 160, bottom: -160, near: 50, far: 700 });
 scene.add(sun);
 
-const model = buildModel();
-model.root.traverse(o => { if (o.isMesh) { o.castShadow = o.castShadow ?? true; } });
-scene.add(model.root);
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ opacity: 0.38 }));
-ground.position.y = model.floorY; ground.receiveShadow = true; scene.add(ground);
-model.setCaseColor(S.caseColor); model.setGrid(S.grid);
-
-const lcd = new Lcd(); model.lcdMat.map = lcd.texture;
+ground.receiveShadow = true; scene.add(ground);
+const KMAP = new Map();
+const NAT = ['KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma', 'KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI'];
+const SHARP = ['KeyD', 'KeyF', 'KeyH', 'KeyJ', 'KeyK', 'Digit2', 'Digit3', 'Digit5', 'Digit6', 'Digit7'];
+let model, lcd;
+function loadModel(v) {
+  if (model) { scene.remove(model.root); model.dispose(); lcd?.texture.dispose(); }
+  model = buildModel(v);
+  scene.add(model.root);
+  ground.position.y = model.floorY;
+  model.setCaseColor(S.caseColor); model.setGrid(S.grid);
+  lcd = new Lcd(...model.lcdRes); model.lcdMat.map = lcd.texture;
+  KMAP.clear();
+  NAT.forEach((c, i) => KMAP.set(c, model.byId['n' + i]));
+  SHARP.forEach((c, i) => KMAP.set(c, model.byId['s' + i]));
+  syncPot(); model.byId.level.ang = model.byId.level.angTarget;
+  lcdDirty = true; dirty = true;
+}
 
 const camera = new THREE.PerspectiveCamera(28, 1, 10, 3000);
-const target = new THREE.Vector3(0, -8, 4);
+const target = new THREE.Vector3(0, -8, 0);
 const DIR = new THREE.Vector3(-0.3, 0.92, 0.55).normalize();
 let dirty = true, lcdDirty = true;
 const mark = () => { dirty = true; };
 
 function fitDistance() {
   const vh = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const hw = 215, hh = 80;
+  const hw = 215, hh = model.depth / 2 + 40;
   return Math.max(hw / (vh * camera.aspect), hh / vh) * 1.22;
 }
 function resize() {
@@ -178,7 +189,7 @@ function setParam(k, v, send = true, fromMidi = false) {
   if (S.params[k] === v && !fromMidi) return;
   const old = S.params[k]; S.params[k] = v; synth.setParam(k, v);
   S.touched[k] = performance.now(); lcdDirty = true; persist();
-  if (k === 'level') syncPot(); else if (k === 'wave') { const c = model.byId.mode; if (fromMidi) c.angTarget += (v - old) * 15; }
+  if (k === 'level') syncPot(); else if (k === 'wave') { const c = model.byId.mode; if (fromMidi && c) c.angTarget += (v - old) * 15; }
   else if (fromMidi) { const c = model.byId[Object.keys(ENC_PARAM).find(x => ENC_PARAM[x] === k)]; if (c) c.angTarget += (v - old) * 3; }
   if (send) midi.cc(CC_OUT[k], k === 'wave' ? v * 32 : v);
   mark();
@@ -191,7 +202,6 @@ function stepEnc(c, d) {
   else setParam(ENC_PARAM[c.id], S.params[ENC_PARAM[c.id]] + d * 2);
   mark();
 }
-syncPot(); model.byId.level.ang = model.byId.level.angTarget;
 
 function setOctave(d) {
   const o = Math.max(-3, Math.min(3, S.octave + d)); if (o === S.octave) return;
@@ -207,14 +217,10 @@ function btnDown(id) {
   else if (id === 'octu') setOctave(1);
   else if (id === 'menu') { S.screen = (S.screen + 1) % 3; lcdDirty = true; }
   else if (id === 'power') setPower(!S.power);
+  else if (id === 'value' && !model.byId.mode) setParam('wave', (S.params.wave + 1) % 4);
 }
 
 // ---- computer keyboard
-const NAT = ['KeyZ', 'KeyX', 'KeyC', 'KeyV', 'KeyB', 'KeyN', 'KeyM', 'Comma', 'KeyQ', 'KeyW', 'KeyE', 'KeyR', 'KeyT', 'KeyY', 'KeyU', 'KeyI'];
-const SHARP = ['KeyD', 'KeyF', 'KeyH', 'KeyJ', 'KeyK', 'Digit2', 'Digit3', 'Digit5', 'Digit6', 'Digit7'];
-const KMAP = new Map();
-NAT.forEach((c, i) => KMAP.set(c, model.byId['n' + i]));
-SHARP.forEach((c, i) => KMAP.set(c, model.byId['s' + i]));
 const CTRL = { Minus: 'octd', Equal: 'octu', Backquote: 'menu' };
 const typing = e => modalOpen() || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
 addEventListener('keydown', e => {
@@ -238,9 +244,19 @@ const start = () => { synth.resume(); midi.init(); };
 addEventListener('pointerdown', start, { once: true, capture: true });
 addEventListener('keydown', start, { once: true, capture: true });
 
+// ---- variants
+function switchVariant(v) {
+  if (v === S.variant) return;
+  allOff(); ptrs.clear(); vis.clear(); hover(null);
+  if (controls) controls.enabled = true;
+  S.variant = v; persist();
+  loadModel(v); resetView();
+}
+loadModel(S.variant);
+
 // ---- ui
 const ui = initUI({
-  S, midi, persist, resetView, start,
+  S, midi, persist, resetView, start, setVariant: switchVariant,
   setCase: c => { S.caseColor = c; model.setCaseColor(c); mark(); persist(); },
   setGrid: g => { S.grid = g; model.setGrid(g); mark(); persist(); },
   setMidi: () => { midi.inId = S.midiIn; midi.outId = S.midiOut; midi.channel = S.channel; lcdDirty = true; persist(); },

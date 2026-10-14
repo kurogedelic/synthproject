@@ -4,13 +4,28 @@ export const BASE_NOTE = 59; // first key = B3 at octave 0
 const NAT_OFF = [0, 1, 3, 5, 6, 8, 10, 12, 13, 15, 17, 18, 20, 22, 24, 25];
 const SHARP_OFF = [2, 4, 7, 9, 11, 14, 16, 19, 21, 23];
 const SHARP_BETWEEN = [[1, 2], [2, 3], [4, 5], [5, 6], [6, 7], [8, 9], [9, 10], [11, 12], [12, 13], [13, 14]];
-const PITCH = 19.05, NAT_Z = 26.4, SHARP_Z = 7.6;
-const W = 314, D = 80, PLATE_T = 3, BODY_H = 14.6;
-const LCD = { x: -28.7, z: -21.8, w: 110, h: 27.5 };
+const PITCH = 19.05, W = 314, PLATE_T = 3, BODY_H = 14.6;
 
-// positions in mm from the PCB layout: x right, z toward the player
-const TACT = { rec: -77.3, play: -0.9, save: 56, octd: 133.6, octu: 145.6 };
-const ENC = { mode: 61.8, set1: 82.7, set2: 103.6, set3: 124.5, set4: 145.5 };
+// mm, x right, z toward the player. Idea 1 follows the PCB layout.
+const L1 = {
+  D: 80, natZ: 26.4, sharpZ: 7.6,
+  lcd: { x: -28.7, z: -21.8, w: 110, h: 27.5, cols: 320, rows: 80 },
+  tact: { rec: [-77.3, 7.6], play: [-0.9, 7.6], save: [56, 7.6], octd: [133.6, 7.6], octu: [145.6, 7.6] },
+  round: { power: [-141.8, -28.2, 2.2, 2.4], menu: [-106.4, -21.8, 4.2, 3], value: [43.6, -22.4, 5.4, 3] },
+  knobs: [['level', 'pot', -123.6, -24.5, 7, 12], ['mode', 'enc', 61.8, -17.3, 6, 11], ['set1', 'enc', 82.7, -17.3, 6, 11],
+    ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11], ['set4', 'enc', 145.5, -17.3, 6, 11]],
+  slots: [61.8, 82.7, 103.6, 124.5, 145.5].map(x => [x, -30]),
+};
+// Idea 2: deeper body, 5:3 display, four knobs, no buttons between the sharps
+const L2 = {
+  D: 150, natZ: 61.4, sharpZ: 42.6,
+  lcd: { x: -20, z: -30, w: 130, h: 78, cols: 400, rows: 240 },
+  tact: { rec: [90, -24], play: [114, -24], save: [138, -24], octd: [114, -6], octu: [138, -6] },
+  round: { power: [-143, -62, 2.2, 2.4], menu: [-125, -18, 4.2, 3], value: [64, -50, 5.4, 3] },
+  knobs: [['level', 'pot', -125, -44, 7, 12], ['set1', 'enc', 82.7, -50, 6, 11], ['set2', 'enc', 103.6, -50, 6, 11],
+    ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
+  slots: [],
+};
 const RAD = Math.PI / 180;
 
 const rr = (p, x, y, w, h, r) => {
@@ -53,7 +68,8 @@ function knobGeometry(r, h) {
   return g;
 }
 
-export function buildModel() {
+export function buildModel(variant = '2') {
+  const V = variant === '1' ? L1 : L2, D = V.D, LCD = V.lcd;
   const root = new THREE.Group();
   const pickables = [], controls = [];
   const byOff = new Map(), byId = {};
@@ -80,7 +96,7 @@ export function buildModel() {
   };
 
   // keys
-  const natX = i => (i - 7.5) * PITCH;
+  const natX = i => (i - 7.5) * PITCH, NAT_Z = V.natZ, SHARP_Z = V.sharpZ;
   const keyMat = c => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.5, clearcoat: 0.15, emissive: '#ff9a4a', emissiveIntensity: 0 });
   const makeKey = (x, z, sharp, idx, off) => {
     holes.push(holeRect(x, z, 14.2, 14.2, 0.6));
@@ -93,13 +109,13 @@ export function buildModel() {
   SHARP_BETWEEN.forEach(([a, b], i) => makeKey((natX(a) + natX(b)) / 2, SHARP_Z, true, i, SHARP_OFF[i]));
 
   // slot buttons
-  const makeTact = (id, x) => {
-    holes.push(holeRect(x, SHARP_Z, 11.6, 5.2, 2.4));
-    add(new THREE.BoxGeometry(11, 3, 4.6), darkMat, x, -2.4, SHARP_Z);
-    const m = add(tactGeo, new THREE.MeshPhysicalMaterial({ color: '#2a2b2f', roughness: 0.5, emissive: '#ff9a4a', emissiveIntensity: 0 }), x, 0.2, SHARP_Z);
+  const makeTact = (id, x, z) => {
+    holes.push(holeRect(x, z, 11.6, 5.2, 2.4));
+    add(new THREE.BoxGeometry(11, 3, 4.6), darkMat, x, -2.4, z);
+    const m = add(tactGeo, new THREE.MeshPhysicalMaterial({ color: '#2a2b2f', roughness: 0.5, emissive: '#ff9a4a', emissiveIntensity: 0 }), x, 0.2, z);
     register({ type: 'btn', id, depth: 1.2 }, m);
   };
-  Object.entries(TACT).forEach(([id, x]) => makeTact(id, x));
+  Object.entries(V.tact).forEach(([id, [x, z]]) => makeTact(id, x, z));
 
   // round buttons
   const makeRound = (id, x, z, r, h = 3) => {
@@ -109,9 +125,7 @@ export function buildModel() {
     const m = add(lathe(r, h), mat, x, 0.3, z);
     register({ type: 'btn', id, depth: 1.4 }, m);
   };
-  makeRound('power', -141.8, -28.2, 2.2, 2.4);
-  makeRound('menu', -106.4, -21.8, 4.2);
-  makeRound('value', 43.6, -22.4, 5.4);
+  Object.entries(V.round).forEach(([id, [x, z, r, h]]) => makeRound(id, x, z, r, h));
 
   // knobs
   const makeKnob = (id, type, x, z, r, h) => {
@@ -128,29 +142,28 @@ export function buildModel() {
     ind.userData.ctl = ctl; pickables.push(ind);
     ctl.hover = false; ctl.press = 0; ctl.target = 0; ctl.mesh = hit; ctl.baseY = 1.2;
   };
-  makeKnob('level', 'pot', -123.6, -24.5, 7, 12);
-  Object.entries(ENC).forEach(([id, x]) => makeKnob(id, 'enc', x, -17.3, 6, 11));
+  V.knobs.forEach(([id, type, x, z, r, h]) => makeKnob(id, type, x, z, r, h));
 
-  // decorative slots above the five encoders
-  Object.values(ENC).forEach(x => {
-    holes.push(holeRect(x, -30, 12, 3.6, 1.6));
-    add(new THREE.BoxGeometry(11.4, 0.4, 3), darkMat, x, -1.6, -30);
+  // decorative slots (idea 1 only)
+  V.slots.forEach(([x, z]) => {
+    holes.push(holeRect(x, z, 12, 3.6, 1.6));
+    add(new THREE.BoxGeometry(11.4, 0.4, 3), darkMat, x, -1.6, z);
   });
 
   // LCD
-  holes.push(holeRect(LCD.x, LCD.z, 114, 31, 2));
-  add(new THREE.BoxGeometry(113, 0.2, 30), darkMat, LCD.x, -1.6, LCD.z);
+  holes.push(holeRect(LCD.x, LCD.z, LCD.w + 4, LCD.h + 3.5, 2));
+  add(new THREE.BoxGeometry(LCD.w + 3, 0.2, LCD.h + 2.5), darkMat, LCD.x, -1.6, LCD.z);
   const lcdMat = new THREE.MeshBasicMaterial({ color: '#ffffff', toneMapped: false });
   const lcdMesh = new THREE.Mesh(new THREE.PlaneGeometry(LCD.w, LCD.h).rotateX(-Math.PI / 2), lcdMat);
   lcdMesh.position.set(LCD.x, -1.4, LCD.z); root.add(lcdMesh);
   const gridCv = document.createElement('canvas'); gridCv.width = gridCv.height = 4;
   const gx = gridCv.getContext('2d'); gx.fillStyle = 'rgba(0,0,0,0.5)'; gx.fillRect(3, 0, 1, 4); gx.fillRect(0, 3, 4, 1);
   const gridTex = new THREE.CanvasTexture(gridCv);
-  gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping; gridTex.repeat.set(320, 80);
+  gridTex.wrapS = gridTex.wrapT = THREE.RepeatWrapping; gridTex.repeat.set(LCD.cols, LCD.rows);
   const gridMesh = new THREE.Mesh(new THREE.PlaneGeometry(LCD.w, LCD.h).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ map: gridTex, transparent: true, toneMapped: false, depthWrite: false }));
   gridMesh.position.set(LCD.x, -1.35, LCD.z); root.add(gridMesh);
-  const glass = new THREE.Mesh(new THREE.PlaneGeometry(113, 30).rotateX(-Math.PI / 2),
+  const glass = new THREE.Mesh(new THREE.PlaneGeometry(LCD.w + 3, LCD.h + 2.5).rotateX(-Math.PI / 2),
     new THREE.MeshPhysicalMaterial({ color: '#ffffff', transparent: true, opacity: 0.07, roughness: 0.04, metalness: 0, depthWrite: false }));
   glass.position.set(LCD.x, -0.6, LCD.z); root.add(glass);
 
@@ -163,14 +176,17 @@ export function buildModel() {
   bodyGeo.translate(0, bodyTop + 0.1 - 14.0, 0);
   add(bodyGeo, caseMat, 0, 0, 0);
   const footGeo = extrude(rr(new THREE.Shape(), 0, 0, 34, 20, 4), 2.6, 0.5);
-  [-1, 1].forEach(s => add(footGeo, blackPlastic, s * 128, -20.5, 27));
+  [-1, 1].forEach(s => add(footGeo, blackPlastic, s * 128, -20.5, D / 2 - 13));
   const floorY = -21.0;
 
   const setCaseColor = c => caseMat.color.set(c);
   const setGrid = on => { gridMesh.visible = on; };
 
   return {
-    root, pickables, controls, byId, byOff, lcdMat, floorY, setCaseColor, setGrid,
+    root, pickables, controls, byId, byOff, lcdMat, floorY, setCaseColor, setGrid, depth: D, lcdRes: [LCD.cols, LCD.rows],
+    dispose() {
+      root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); [].concat(o.material).forEach(m => { m.map?.dispose?.(); m.dispose(); }); } });
+    },
     setHover(ctl, on) {
       if (!ctl || ctl.hover === on) return;
       ctl.hover = on; ctl.hoverDirty = true;

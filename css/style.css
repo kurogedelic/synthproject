@@ -22,6 +22,16 @@ button, select { font: inherit; color: inherit; }
 #info:hover { background: rgba(48, 50, 57, .85); }
 #info:active { transform: scale(.94); }
 
+#tabs {
+  position: fixed; top: max(14px, env(safe-area-inset-top)); left: max(14px, env(safe-area-inset-left));
+  display: flex; gap: 2px; padding: 3px; height: 40px; border-radius: 20px;
+  background: rgba(30, 31, 36, .72); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#tabs button { padding: 0 14px; border: 0; border-radius: 17px; background: transparent; color: var(--dim); cursor: pointer; transition: background .15s, color .15s; }
+#tabs button:hover { color: var(--fg); }
+#tabs button[aria-selected="true"] { background: #3a3c44; color: var(--fg); }
+
 dialog {
   width: min(520px, calc(100vw - 32px)); max-height: min(82vh, 720px); padding: 0; margin: auto;
   background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 14px;
