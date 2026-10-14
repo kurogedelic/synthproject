@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=6';
-import { Synth } from './synth.js?v=6';
-import { Midi } from './midi.js?v=6';
-import { Lcd } from './lcd.js?v=6';
-import { drawScreen } from './screens.js?v=6';
-import { initUI } from './ui.js?v=6';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=7';
+import { Synth } from './synth.js?v=7';
+import { Midi } from './midi.js?v=7';
+import { Lcd } from './lcd.js?v=7';
+import { drawScreen } from './screens.js?v=7';
+import { initUI } from './ui.js?v=7';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {

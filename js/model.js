@@ -27,10 +27,24 @@ const L2 = {
     ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
   slots: [],
 };
+// Idea 3 starts from Idea 2. Keys are rounded rectangles at 75% of the
+// 17.4 mm cap width; pitch (PITCH) is unchanged. 2.4 mm corners suit a ~13 mm pad.
+const L3 = {
+  D: 150, natZ: 61.4, sharpZ: 42.6,
+  lcd: { x: -20, z: -50, w: 110, h: 27.5, cols: 320, rows: 80 },
+  tact: { rec: [90, -24], play: [114, -24], save: [138, -24], octd: [114, -6], octu: [138, -6] },
+  round: { power: [-143, -62, 2.2, 2.4], menu: [-125, -18, 4.2, 3], value: [64, -50, 5.4, 3] },
+  knobs: [['level', 'pot', -125, -44, 7, 12], ['set1', 'enc', 82.7, -50, 6, 11], ['set2', 'enc', 103.6, -50, 6, 11],
+    ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
+  slots: [],
+  keyW: 0.75,
+  keyR: 2.4,
+};
 // Add a design here. `id` is the #idea<id> hash and the variant key.
 export const IDEAS = [
   { id: '1', label: 'Idea 1', layout: L1 },
   { id: '2', label: 'Idea 2', layout: L2 },
+  { id: '3', label: 'Idea 3', layout: L3 },
 ];
 const RAD = Math.PI / 180;
 
@@ -94,7 +108,10 @@ export function buildModel(variant = '2') {
   // plate holes
   const holes = [];
   const plateShape = rr(new THREE.Shape(), 0, 0, W, D, 6);
-  const capGeo = (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, 17.4, 17.4, 2.2), 5, 0.8); g.translate(0, 0.8, 0); return g; })();
+  // Idea 1 and 2 leave keyW/keyR unset, so the cap stays the original 17.4 mm square, r 2.2.
+  const keyScale = V.keyW ?? 1, capW = 17.4 * keyScale, capD = 17.4, capR = V.keyR ?? 2.2;
+  const holeW = 14.2 * keyScale, holeD = 14.2, wellW = 13.6 * keyScale, wellD = 13.6;
+  const capGeo = (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, capW, capD, capR), 5, 0.8); g.translate(0, 0.8, 0); return g; })();
   const tactGeo = (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, 9.6, 3.6, 1.6), 1.8, 0.5); g.translate(0, 0.5, 0); return g; })();
 
   const register = (ctl, mesh) => {
@@ -106,8 +123,8 @@ export function buildModel(variant = '2') {
   const natX = i => (i - 7.5) * PITCH, NAT_Z = V.natZ, SHARP_Z = V.sharpZ;
   const keyMat = c => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.5, clearcoat: 0.15, emissive: '#ff9a4a', emissiveIntensity: 0 });
   const makeKey = (x, z, sharp, idx, off) => {
-    holes.push(holeRect(x, z, 14.2, 14.2, 0.6));
-    add(new THREE.BoxGeometry(13.6, 3, 13.6), darkMat, x, -2.4, z);
+    holes.push(holeRect(x, z, holeW, holeD, 0.6));
+    add(new THREE.BoxGeometry(wellW, 3, wellD), darkMat, x, -2.4, z);
     const m = add(capGeo, keyMat(sharp ? charcoal : ivory), x, 1.6, z);
     const ctl = { type: 'key', id: (sharp ? 's' : 'n') + idx, sharp, off, depth: 3 };
     register(ctl, m); byOff.set(off, ctl);
