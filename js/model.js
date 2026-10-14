@@ -27,6 +27,11 @@ const L2 = {
     ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
   slots: [],
 };
+// Add a design here. `id` is the #idea<id> hash and the variant key.
+export const IDEAS = [
+  { id: '1', label: 'Idea 1', layout: L1 },
+  { id: '2', label: 'Idea 2', layout: L2 },
+];
 const RAD = Math.PI / 180;
 
 const rr = (p, x, y, w, h, r) => {
@@ -70,7 +75,8 @@ function knobGeometry(r, h) {
 }
 
 export function buildModel(variant = '2') {
-  const V = variant === '1' ? L1 : L2, D = V.D, LCD = V.lcd;
+  const idea = IDEAS.find(i => i.id === variant) || IDEAS.find(i => i.id === '2') || IDEAS[0];
+  const V = idea.layout, D = V.D, LCD = V.lcd;
   const root = new THREE.Group();
   const pickables = [], controls = [];
   const byOff = new Map(), byId = {};

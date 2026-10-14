@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE } from './model.js?v=5';
-import { Synth } from './synth.js?v=5';
-import { Midi } from './midi.js?v=5';
-import { Lcd } from './lcd.js?v=5';
-import { drawScreen } from './screens.js?v=5';
-import { initUI } from './ui.js?v=5';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=6';
+import { Synth } from './synth.js?v=6';
+import { Midi } from './midi.js?v=6';
+import { Lcd } from './lcd.js?v=6';
+import { drawScreen } from './screens.js?v=6';
+import { initUI } from './ui.js?v=6';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {
@@ -16,7 +16,8 @@ const DEFAULTS = {
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
 const S = { ...DEFAULTS, ...saved, params: { ...DEFAULTS.params, ...(saved.params || {}) } };
-const hv = { '#idea1': '1', '#idea2': '2' }[location.hash];
+const ideaFromHash = hash => IDEAS.find(i => hash === '#idea' + i.id)?.id;
+const hv = ideaFromHash(location.hash);
 if (hv) S.variant = hv;
 S.power = true; S.screen = 0; S.lastNote = null; S.touched = {}; S.scope = null;
 let saveTimer = 0;
@@ -299,7 +300,7 @@ function btnDown(id) {
 
 // ---- computer keyboard
 const CTRL = { Minus: 'octd', Equal: 'octu', Backquote: 'menu' };
-const typing = e => modalOpen() || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+const typing = e => modalOpen() || !document.getElementById('design-menu').hidden || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
 addEventListener('keydown', e => {
   if (typing(e)) return;
   const k = KMAP.get(e.code), b = CTRL[e.code];
@@ -323,7 +324,7 @@ addEventListener('keydown', start, { once: true, capture: true });
 
 // ---- variants
 function switchVariant(v) {
-  if (v === S.variant) return;
+  if (!IDEAS.some(i => i.id === v) || v === S.variant) return;
   allOff(); ptrs.clear(); vis.clear(); hover(null);
   if (controls) controls.enabled = true;
   S.variant = v; persist();
@@ -331,14 +332,14 @@ function switchVariant(v) {
   loadModel(v); resetView();
 }
 addEventListener('hashchange', () => {
-  const v = { '#idea1': '1', '#idea2': '2' }[location.hash];
-  if (v) { switchVariant(v); ui.paintTabs(); }
+  const v = ideaFromHash(location.hash);
+  if (v) { switchVariant(v); ui.paintIdeas(); }
 });
 loadModel(S.variant);
 
 // ---- ui
 const ui = initUI({
-  S, midi, persist, resetView, start, setVariant: switchVariant, setView: name => placeCamera(name, true),
+  S, midi, persist, resetView, start, IDEAS, setView: name => placeCamera(name, true),
   setCase: c => { S.caseColor = c; model.setCaseColor(c); mark(); persist(); },
   setGrid: g => { S.grid = g; model.setGrid(g); mark(); persist(); },
   setMidi: () => { midi.inId = S.midiIn; midi.outId = S.midiOut; midi.channel = S.channel; lcdDirty = true; persist(); },

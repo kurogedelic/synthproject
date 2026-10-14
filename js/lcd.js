@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { glyph } from './font.js?v=5';
+import { glyph } from './font.js?v=6';
 
 export class Lcd {
   constructor(w = 320, h = 80) {
