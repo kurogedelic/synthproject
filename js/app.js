@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE } from './model.js?v=4';
-import { Synth } from './synth.js?v=4';
-import { Midi } from './midi.js?v=4';
-import { Lcd } from './lcd.js?v=4';
-import { drawScreen } from './screens.js?v=4';
-import { initUI } from './ui.js?v=4';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=5';
+import { Synth } from './synth.js?v=5';
+import { Midi } from './midi.js?v=5';
+import { Lcd } from './lcd.js?v=5';
+import { drawScreen } from './screens.js?v=5';
+import { initUI } from './ui.js?v=5';
 
 const KEY = 'synthproject:v2';
 const DEFAULTS = {
@@ -16,7 +16,8 @@ const DEFAULTS = {
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
 const S = { ...DEFAULTS, ...saved, params: { ...DEFAULTS.params, ...(saved.params || {}) } };
-const hv = { '#idea1': '1', '#idea2': '2' }[location.hash];
+const ideaFromHash = hash => IDEAS.find(i => hash === '#idea' + i.id)?.id ?? null;
+const hv = ideaFromHash(location.hash);
 if (hv) S.variant = hv;
 S.power = true; S.screen = 0; S.lastNote = null; S.touched = {}; S.scope = null;
 let saveTimer = 0;
@@ -80,23 +81,88 @@ function loadModel(v) {
 
 const camera = new THREE.PerspectiveCamera(28, 1, 10, 3000);
 const target = new THREE.Vector3(0, -8, 0);
-const DIR = new THREE.Vector3(-0.3, 0.92, 0.55).normalize();
-let dirty = true, lcdDirty = true;
+// Straight-on front: previous elevation, no sideways offset. This is also the load / reset view.
+const FRONT = new THREE.Vector3(0, 0.92, Math.hypot(0.3, 0.55)).normalize();
+const _frontSph = new THREE.Spherical().setFromVector3(FRONT);
+const VIEWS = {
+  front: FRONT,
+  top: new THREE.Vector3().setFromSphericalCoords(1, 0.08, _frontSph.theta),
+  side: new THREE.Vector3().setFromSphericalCoords(1, _frontSph.phi, Math.PI / 2),
+};
+let dirty = true, lcdDirty = true, camAnim = null, ui;
 const mark = () => { dirty = true; };
+const _sph = new THREE.Spherical(), _off = new THREE.Vector3(), _tgt = new THREE.Vector3();
 
 function fitDistance() {
   const vh = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const hw = 215, hh = model.depth / 2 + 40;
   return Math.max(hw / (vh * camera.aspect), hh / vh) * 1.22;
 }
+function calmControls() {
+  controls._sphericalDelta.set(0, 0, 0);
+  controls._panOffset.set(0, 0, 0);
+  controls._scale = 1;
+}
+function applySph(s, tgt) {
+  _off.setFromSpherical(s);
+  controls.target.copy(tgt);
+  camera.position.copy(tgt).add(_off);
+  camera.lookAt(tgt);
+}
+function lerpAngle(a, b, t) {
+  let d = b - a;
+  while (d > Math.PI) d -= Math.PI * 2;
+  while (d < -Math.PI) d += Math.PI * 2;
+  return a + d * t;
+}
 function resize() {
   const w = innerWidth, h = innerHeight;
   renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
-  const dir = camera.position.clone().sub(controls.target);
-  camera.position.copy(controls.target).add(dir.normalize().multiplyScalar(fitDistance()));
+  if (camAnim) camAnim.endR = fitDistance();
+  else {
+    const dir = camera.position.clone().sub(controls.target);
+    camera.position.copy(controls.target).addScaledVector(dir.normalize(), fitDistance());
+  }
   mark();
 }
-function resetView() { camera.position.copy(target).add(DIR.clone().multiplyScalar(fitDistance())); controls.target.copy(target); controls.update(); mark(); }
+// `animate` is for the view buttons and Reset view. Load and design changes snap so the first frame is already framed.
+function goView(name, animate) {
+  const dir = VIEWS[name];
+  if (!dir) return;
+  _sph.setFromVector3(dir);
+  const endPhi = _sph.phi, endTheta = _sph.theta, endR = fitDistance();
+  ui?.paintView(name);
+  calmControls();
+  const reduce = !animate || matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) {
+    camAnim = null;
+    applySph(new THREE.Spherical(endR, endPhi, endTheta), target);
+    controls.update();
+    mark();
+    return;
+  }
+  const start = new THREE.Spherical().setFromVector3(camera.position.clone().sub(controls.target));
+  camAnim = {
+    startPhi: start.phi, startTheta: start.theta, startR: start.radius || endR,
+    endPhi, endTheta, endR, startTarget: controls.target.clone(), t0: performance.now(), dur: 520,
+  };
+  mark();
+}
+function tickCamera(now) {
+  if (!camAnim) return false;
+  const a = camAnim;
+  const t = Math.min(1, (now - a.t0) / a.dur);
+  const e = 1 - (1 - t) ** 3;
+  _tgt.copy(a.startTarget).lerp(target, e);
+  applySph(new THREE.Spherical(
+    a.startR + (a.endR - a.startR) * e,
+    a.startPhi + (a.endPhi - a.startPhi) * e,
+    lerpAngle(a.startTheta, a.endTheta, e),
+  ), _tgt);
+  if (t >= 1) { camAnim = null; calmControls(); controls.update(); }
+  return true;
+}
+function resetView(animate) { goView('front', animate === true); }
 
 // ---- interaction (registered before OrbitControls so it can claim events)
 const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
@@ -162,8 +228,9 @@ canvas.addEventListener('wheel', e => {
 }, { passive: false, capture: true });
 
 controls = new OrbitControls(camera, canvas);
-Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 120, maxDistance: 900, maxPolarAngle: Math.PI * 0.47, minPolarAngle: 0.15 });
+Object.assign(controls, { enableDamping: true, dampingFactor: 0.08, enablePan: false, minDistance: 120, maxDistance: 900, maxPolarAngle: Math.PI * 0.47, minPolarAngle: 0.06 });
 controls.addEventListener('change', mark);
+controls.addEventListener('start', () => { camAnim = null; ui?.paintView(null); });
 canvas.style.touchAction = 'none';
 
 // ---- notes
@@ -224,7 +291,7 @@ function btnDown(id) {
 
 // ---- computer keyboard
 const CTRL = { Minus: 'octd', Equal: 'octu', Backquote: 'menu' };
-const typing = e => modalOpen() || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
+const typing = e => modalOpen() || !document.getElementById('design-menu').hidden || e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName);
 addEventListener('keydown', e => {
   if (typing(e)) return;
   const k = KMAP.get(e.code), b = CTRL[e.code];
@@ -248,22 +315,25 @@ addEventListener('keydown', start, { once: true, capture: true });
 
 // ---- variants
 function switchVariant(v) {
-  if (v === S.variant) return;
-  allOff(); ptrs.clear(); vis.clear(); hover(null);
-  if (controls) controls.enabled = true;
-  S.variant = v; persist();
+  if (!IDEAS.some(i => i.id === v)) return;
+  if (v !== S.variant) {
+    allOff(); ptrs.clear(); vis.clear(); hover(null);
+    if (controls) controls.enabled = true;
+    S.variant = v; persist();
+    loadModel(v); resetView(false);
+  }
   try { history.replaceState(null, '', '#idea' + v); } catch {}
-  loadModel(v); resetView();
+  ui?.paintIdeas();
 }
 addEventListener('hashchange', () => {
-  const v = { '#idea1': '1', '#idea2': '2' }[location.hash];
-  if (v) { switchVariant(v); ui.paintTabs(); }
+  const v = ideaFromHash(location.hash);
+  if (v) switchVariant(v);
 });
 loadModel(S.variant);
 
 // ---- ui
-const ui = initUI({
-  S, midi, persist, resetView, start, setVariant: switchVariant,
+ui = initUI({
+  S, midi, persist, resetView, start, IDEAS, setView: name => goView(name, true),
   setCase: c => { S.caseColor = c; model.setCaseColor(c); mark(); persist(); },
   setGrid: g => { S.grid = g; model.setGrid(g); mark(); persist(); },
   setMidi: () => { midi.inId = S.midiIn; midi.outId = S.midiOut; midi.channel = S.channel; lcdDirty = true; persist(); },
@@ -275,6 +345,7 @@ resetView(); resize();
 let lastLcd = 0, hotWas = false;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (tickCamera(now)) dirty = true;
   if (controls.update()) dirty = true;
   if (model.update()) dirty = true;
   const live = S.power && S.screen === 1 && !!synth.ctx;
