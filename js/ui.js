@@ -67,12 +67,7 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
 
   const grid = $('grid'); grid.checked = S.grid;
   grid.addEventListener('change', () => setGrid(grid.checked));
-  $('reset').addEventListener('click', () => resetView(true));
-
-  const viewBtns = [...document.querySelectorAll('#views button')];
-  const paintViews = (name) => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
-  viewBtns.forEach(b => b.addEventListener('click', () => { start(); setView(b.dataset.view); }));
-  paintViews('front');
+  $('reset').addEventListener('click', resetView);
 
   // midi
   const sIn = $('midi-in'), sOut = $('midi-out'), sCh = $('midi-ch');
