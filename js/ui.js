@@ -1,7 +1,7 @@
 const CASES = [['#f26b1d', 'Orange'], ['#8d8f94', 'Gray'], ['#1f2023', 'Black'], ['#e8e6df', 'White']];
 const $ = id => document.getElementById(id);
 
-export function initUI({ S, midi, persist, resetView, start, setVariant, setCase, setGrid, setMidi }) {
+export function initUI({ S, midi, persist, resetView, start, setVariant, setCase, setGrid, setMidi, setView }) {
   const tabs = [...document.querySelectorAll('#tabs a')];
   const paintTabs = () => tabs.forEach(t => { if (t.dataset.v === S.variant) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
   tabs.forEach(t => t.addEventListener('click', start));
@@ -28,6 +28,11 @@ export function initUI({ S, midi, persist, resetView, start, setVariant, setCase
   const grid = $('grid'); grid.checked = S.grid;
   grid.addEventListener('change', () => setGrid(grid.checked));
   $('reset').addEventListener('click', resetView);
+
+  const viewBtns = [...document.querySelectorAll('#views button')];
+  const paintViews = (name) => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.view === name)));
+  viewBtns.forEach(b => b.addEventListener('click', () => { start(); setView(b.dataset.view); }));
+  paintViews('front');
 
   // midi
   const sIn = $('midi-in'), sOut = $('midi-out'), sCh = $('midi-ch');
@@ -59,5 +64,5 @@ export function initUI({ S, midi, persist, resetView, start, setVariant, setCase
     keys.forEach(k => { const i = document.createElement('i'); if (k) { i.textContent = k; i.className = kind === 'n' ? 'n' : 's'; } else i.className = 'gap'; r.append(i); });
     return r;
   }));
-  return { refreshMidi, paintTabs };
+  return { refreshMidi, paintTabs, paintViews };
 }

@@ -32,6 +32,21 @@ button, select { font: inherit; color: inherit; }
 #tabs a:hover { color: var(--fg); text-decoration: none; }
 #tabs a[aria-current="page"] { background: #3a3c44; color: var(--fg); }
 
+#views {
+  position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 2; display: flex; gap: 2px; padding: 3px; height: 40px; border-radius: 20px;
+  background: rgba(30, 31, 36, .72); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#views button {
+  width: 36px; height: 34px; border: 0; border-radius: 17px; padding: 0; cursor: pointer;
+  display: grid; place-items: center; background: transparent; color: var(--dim);
+  touch-action: manipulation; transition: background .15s, color .15s, transform .15s;
+}
+#views button:hover { color: var(--fg); }
+#views button[aria-pressed="true"] { background: #3a3c44; color: var(--fg); }
+#views button:active { transform: scale(.94); }
+
 dialog {
   width: min(520px, calc(100vw - 32px)); max-height: min(82vh, 720px); padding: 0; margin: auto;
   background: var(--panel); color: var(--fg); border: 1px solid var(--line); border-radius: 14px;
@@ -40,7 +55,10 @@ dialog {
 dialog[open] { display: flex; flex-direction: column; animation: pop .16s ease-out; }
 dialog::backdrop { background: rgba(8, 9, 11, .55); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
 @keyframes pop { from { opacity: 0; transform: translateY(6px) scale(.985); } }
-@media (prefers-reduced-motion: reduce) { dialog[open] { animation: none; } #info { transition: none; } }
+@media (prefers-reduced-motion: reduce) { dialog[open] { animation: none; } #info, #views button { transition: none; } }
+@media (max-width: 380px) {
+  #views button { width: 32px; }
+}
 header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 12px 20px; border-bottom: 1px solid var(--line); }
 h2 { margin: 0; font-size: 15px; font-weight: 600; }
 #close { width: 32px; height: 32px; display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--dim); cursor: pointer; }

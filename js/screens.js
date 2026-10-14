@@ -1,4 +1,4 @@
-import { WAVES } from './synth.js?v=4';
+import { WAVES } from './synth.js?v=5';
 
 const C = { bg: '#0a1014', fg: '#e2efe8', dim: '#46585a', accent: '#ff7a1a', grid: '#16242a' };
 const NOTE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
