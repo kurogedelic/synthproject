@@ -19,7 +19,7 @@ const L1 = {
 // Idea 2: deeper body, 5:3 display, four knobs, no buttons between the sharps
 const L2 = {
   D: 150, natZ: 61.4, sharpZ: 42.6,
-  lcd: { x: -20, z: -30, w: 130, h: 78, cols: 400, rows: 240 },
+  lcd: { x: -20, z: -50, w: 110, h: 27.5, cols: 320, rows: 80 },
   tact: { rec: [90, -24], play: [114, -24], save: [138, -24], octd: [114, -6], octu: [138, -6] },
   round: { power: [-143, -62, 2.2, 2.4], menu: [-125, -18, 4.2, 3], value: [64, -50, 5.4, 3] },
   knobs: [['level', 'pot', -125, -44, 7, 12], ['set1', 'enc', 82.7, -50, 6, 11], ['set2', 'enc', 103.6, -50, 6, 11],
