@@ -5,21 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#16171a">
 <title>synthproject</title>
-<link rel="stylesheet" href="css/style.css?v=7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@500;600&family=Montserrat:wght@400;600&display=swap">
+<link rel="stylesheet" href="css/style.css?v=64">
 <script type="importmap">{"imports":{"three":"./vendor/three.module.min.js","three/addons/":"./vendor/addons/"}}</script>
 </head>
 <body>
 <canvas id="view"></canvas>
+<div id="tip" role="tooltip" hidden></div>
 <div id="design">
   <button id="design-btn" type="button" aria-haspopup="listbox" aria-expanded="false" aria-controls="design-menu">
-    <span id="design-current">Idea 2</span>
-    <svg class="chev" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span id="design-current">Idea A</span>
+    <span class="fi chev" aria-hidden="true">&#xead2;</span>
   </button>
   <div id="design-menu" role="listbox" aria-label="Design" hidden></div>
 </div>
-<button id="info" type="button" aria-label="Info and settings" aria-haspopup="dialog">
+<button id="info" type="button" aria-label="Info and settings" aria-controls="modal" aria-expanded="false">
   <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.8" r="1.25" fill="currentColor"/><path d="M12 11v6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
 </button>
+<div id="modes" role="radiogroup" aria-label="Mode">
+  <button type="button" role="radio" data-mode="key" aria-checked="true"><span class="fi" aria-hidden="true">&#xeacc;</span>Keyboard</button>
+  <button type="button" role="radio" data-mode="drum" aria-checked="false"><span class="fi" aria-hidden="true">&#xea66;</span>Drum</button>
+</div>
 <div id="views" role="group" aria-label="Camera views">
   <button type="button" data-view="front" aria-label="Front view" title="Front" aria-pressed="true"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6 14.5h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
   <button type="button" data-view="top" aria-label="Top view" title="Top"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M4 11h16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>
@@ -27,7 +35,7 @@
   <button type="button" data-view="persp" aria-label="Perspective view" title="Perspective"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 3.2 20.2 7.6v8.2L12 20.8 3.8 15.8V7.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M12 12.2 20.2 7.6M12 12.2 3.8 7.6M12 12.2V20.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/></svg></button>
 </div>
 <dialog id="modal" aria-labelledby="m-title">
-  <header><h2 id="m-title">Settings</h2><button id="close" type="button" aria-label="Close"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button></header>
+  <header><h2 id="m-title">Settings</h2><button id="close" type="button" aria-label="Close"><span class="fi" aria-hidden="true">&#xeaa3;</span></button></header>
   <div class="body">
     <section>
       <h3>Case</h3>
@@ -54,7 +62,12 @@
       <h3>Controls</h3>
       <dl class="keys">
         <dt>Knob</dt><dd>Drag vertically or scroll</dd>
-        <dt>CC</dt><dd>Level 7 · Cutoff 74 · Resonance 71 · Attack 73 · Release 72 · Wave 14</dd>
+        <dt>TEMPO</dt><dd>Sequencer tempo</dd>
+        <dt>E1–E4</dt><dd>The four knobs of the page, or of the selected drum</dd>
+        <dt>F1–F6</dt><dd>Pages: Home, Osc, Filter, Env, LFO, FX</dd>
+        <dt>F7–F12</dt><dd>Presets 1–6</dd>
+        <dt>Drum</dt><dd>White keys toggle steps · black keys pick and play a drum · PLAY starts · REC records hits</dd>
+        <dt>CC</dt><dd>Volume 7 · Cutoff 74 · Resonance 71 · Attack 73 · Release 72</dd>
       </dl>
     </section>
     <section>
@@ -62,12 +75,12 @@
       <dl class="keys">
         <dt>Author</dt><dd>kurogedelic</dd>
         <dt>Source</dt><dd><a href="https://github.com/kurogedelic/synthproject" target="_blank" rel="noopener">github.com/kurogedelic/synthproject</a></dd>
-        <dt>Credits</dt><dd><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> r170 (MIT) · Web Audio · Web MIDI</dd>
+        <dt>Credits</dt><dd><a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> r170 (MIT) · Fukiai icons (MIT, Leo Kuroshita) · Web Audio · Web MIDI</dd>
         <dt>Version</dt><dd>0.1.0</dd>
       </dl>
     </section>
   </div>
 </dialog>
-<script type="module" src="js/app.js?v=7"></script>
+<script type="module" src="js/app.js?v=64"></script>
 </body>
 </html>

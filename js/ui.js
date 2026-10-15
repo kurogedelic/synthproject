@@ -1,7 +1,7 @@
 const CASES = [['#f26b1d', 'Orange'], ['#8d8f94', 'Gray'], ['#1f2023', 'Black'], ['#e8e6df', 'White']];
 const $ = id => document.getElementById(id);
 
-export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, setMidi, IDEAS, setView }) {
+export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, setMidi, IDEAS, setView, setMode }) {
   const design = $('design'), btn = $('design-btn'), menu = $('design-menu'), current = $('design-current');
   const closeMenu = (focusBtn = false) => {
     if (menu.hidden) return;
@@ -42,16 +42,26 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
   addEventListener('hashchange', () => { closeMenu(); paintIdeas(); });
   paintIdeas();
 
+  const modeBtns = [...document.querySelectorAll('#modes [data-mode]')];
+  const paintMode = m => modeBtns.forEach(b => b.setAttribute('aria-checked', String(b.dataset.mode === m)));
+  modeBtns.forEach(b => b.addEventListener('click', () => { start(); setMode(b.dataset.mode); }));
+  paintMode(S.mode);
+
   const viewBtns = [...document.querySelectorAll('#views [data-view]')];
   const paintViews = name => viewBtns.forEach(b => b.setAttribute('aria-pressed', String(!!name && b.dataset.view === name)));
   viewBtns.forEach(b => b.addEventListener('click', () => { start(); setView(b.dataset.view); }));
   paintViews('front');
   const modal = $('modal');
-  const open = () => { start(); modal.showModal(); refreshMidi(); };
-  $('info').addEventListener('click', open);
+  // Non-modal side panel: the device stays playable while it is open.
+  const toggle = () => {
+    start();
+    if (modal.open) { modal.close(); return; }
+    modal.show(); refreshMidi(); $('info').setAttribute('aria-expanded', 'true');
+  };
+  $('info').addEventListener('click', toggle);
   $('close').addEventListener('click', () => modal.close());
-  modal.addEventListener('click', e => { if (e.target === modal) modal.close(); });
-  modal.addEventListener('close', () => $('info').focus());
+  addEventListener('keydown', e => { if (e.key === 'Escape' && modal.open) { e.preventDefault(); modal.close(); } });
+  modal.addEventListener('close', () => { $('info').setAttribute('aria-expanded', 'false'); if (modal.contains(document.activeElement)) $('info').focus(); });
 
   // case swatches
   const sw = $('swatches');
@@ -99,5 +109,5 @@ export function initUI({ S, midi, persist, resetView, start, setCase, setGrid, s
     keys.forEach(k => { const i = document.createElement('i'); if (k) { i.textContent = k; i.className = kind === 'n' ? 'n' : 's'; } else i.className = 'gap'; r.append(i); });
     return r;
   }));
-  return { refreshMidi, paintIdeas, paintViews };
+  return { refreshMidi, paintIdeas, paintViews, paintMode };
 }
