@@ -1,18 +1,18 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=64';
-import { Synth, PAGES, PRESETS, paramMax } from './synth.js?v=64';
-import { Drums, PIECES, DRUM_KNOBS, GM, defaultDrums } from './drums.js?v=64';
-import { Midi } from './midi.js?v=64';
-import { Lcd } from './lcd.js?v=64';
-import { drawScreen, noteName } from './screens.js?v=64';
-import { initUI } from './ui.js?v=64';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=66';
+import { Synth, PAGES, PRESETS, paramMax } from './synth.js?v=66';
+import { Drums, PIECES, DRUM_KNOBS, GM, defaultDrums } from './drums.js?v=66';
+import { Midi } from './midi.js?v=66';
+import { Lcd } from './lcd.js?v=66';
+import { drawScreen, noteName } from './screens.js?v=66';
+import { initUI } from './ui.js?v=66';
 
 const KEY = 'synthproject:v3';
 const DEFAULTS = {
   caseColor: '#8d8f94', variant: 'A', grid: true, midiIn: 'all', midiOut: 'off', channel: 0, octave: 0,
-  mode: 'key', page: 0, preset: 0, level: 100, params: { ...PRESETS[0].params },
+  mode: 'key', page: 0, preset: 0, level: 100, light: 50, params: { ...PRESETS[0].params },
 };
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch {}
@@ -28,8 +28,8 @@ const persist = () => {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
     try {
-      const { caseColor, variant, grid, midiIn, midiOut, channel, octave, mode, page, preset, level, params, drum } = S;
-      localStorage.setItem(KEY, JSON.stringify({ caseColor, variant, grid, midiIn, midiOut, channel, octave, mode, page, preset, level, params, drum }));
+      const { caseColor, variant, grid, midiIn, midiOut, channel, octave, mode, page, preset, level, light, params, drum } = S;
+      localStorage.setItem(KEY, JSON.stringify({ caseColor, variant, grid, midiIn, midiOut, channel, octave, mode, page, preset, level, light, params, drum }));
     } catch {}
   }, 300);
 };
@@ -62,6 +62,13 @@ const scene = new THREE.Scene();
 const pm = new THREE.PMREMGenerator(renderer);
 scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.55;
+// Room brightness (0..100, 50 = default) scales the exposure of the lit
+// scene. The LCD and NeoPixels are not tone mapped, so they keep their glow.
+function setLight(v) {
+  S.light = Math.max(0, Math.min(100, +v));
+  renderer.toneMappingExposure = 0.8 * 2 ** ((S.light - 50) / 36);
+  dirty = true;
+}
 const sun = new THREE.DirectionalLight('#ffffff', 1.5);
 sun.position.set(-140, 280, 200); sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048); sun.shadow.bias = -0.0004; sun.shadow.radius = 5;
@@ -443,6 +450,9 @@ const ui = initUI({
   setMidi: () => { midi.inId = S.midiIn; midi.outId = S.midiOut; midi.channel = S.channel; lcdDirty = true; persist(); },
   setMode,
 });
+const lightEl = document.getElementById('light-range');
+lightEl.value = S.light; setLight(S.light);
+lightEl.addEventListener('input', () => { setLight(lightEl.value); persist(); });
 
 // ---- loop
 addEventListener('resize', resize);

@@ -76,6 +76,17 @@ button, select { font: inherit; color: inherit; }
 #modes button:hover { color: var(--fg); }
 #modes button[aria-checked="true"] { background: #3a3c44; color: var(--fg); }
 #modes button:active { transform: scale(.96); }
+/* Room brightness: a pill above the camera buttons, same width. */
+#light {
+  position: fixed; z-index: 2; right: max(14px, env(safe-area-inset-right));
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 48px);
+  width: 158px; height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+  border-radius: 20px; color: var(--dim); cursor: pointer;
+  background: rgba(30, 31, 36, .72); border: 1px solid rgba(255, 255, 255, .12);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+#light svg { flex: 0 0 auto; }
+#light input { flex: 1; min-width: 0; margin: 0; accent-color: var(--fg); cursor: pointer; }
 #views {
   position: fixed; right: max(14px, env(safe-area-inset-right)); bottom: max(14px, env(safe-area-inset-bottom));
   z-index: 2; display: flex; gap: 2px; padding: 3px; height: 40px; border-radius: 20px;

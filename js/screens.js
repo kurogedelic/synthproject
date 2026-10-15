@@ -1,8 +1,8 @@
 // LCD pages after Kreisel's UI: black ground, one accent panel per page at
 // 85 % over black, black ink on panels, a four-column knob row and one
 // functional drawing per page. Sized for 320 x 170; 320 x 80 gets a compact view.
-import { PAGES, WAVES, FX_NAMES, T } from './synth.js?v=64';
-import { PIECES, DRUM_KNOBS, STEPS } from './drums.js?v=64';
+import { PAGES, WAVES, FX_NAMES, T } from './synth.js?v=66';
+import { PIECES, DRUM_KNOBS, STEPS } from './drums.js?v=66';
 
 const NOTE = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 export const noteName = n => NOTE[n % 12] + (Math.floor(n / 12) - 1);
