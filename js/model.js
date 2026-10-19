@@ -114,7 +114,8 @@ const LB = {
   ...L2,
   W: 310, // 16 x 19.05 mm pitch; ~2.6 mm nominal end margin per side
   pitch: 19.05,
-  natZ: 39, // move the white keys toward the front edge
+  natZ: 35.5, // longer white caps extend forward to fill the front margin
+  naturalKeyLength: 23.8, // 1.25U depth (19.05 x 1.25), rounded to 23.8 mm
   underKeyLed: true,
   ledZ: null,
   keyRound: false,
@@ -228,6 +229,7 @@ export function buildModel(variant = 'A') {
   // The bevel adds 0.8 mm per side, so keyW scales that finished width.
   const BEVEL = 0.8, keyScale = V.keyW ?? 1, capD = 17.4, capR = V.keyR ?? 2.2;
   const capW = (capD + 2 * BEVEL) * keyScale - 2 * BEVEL;
+  const naturalCapD = V.naturalKeyLength ? V.naturalKeyLength - 2 * BEVEL : capD;
   const holeW = 14.2 * keyScale, holeD = 14.2, wellW = 13.6 * keyScale, wellD = 13.6;
   // Round caps use a softer 1.2 mm edge; the finished diameter stays at 19 * keyW.
   // They are half the square cap height (3.3 mm) and sit 1 mm into a slightly
@@ -257,15 +259,19 @@ export function buildModel(variant = 'A') {
   const leds = [];
   const keyMat = c => new THREE.MeshPhysicalMaterial({ color: c, roughness: 0.5, clearcoat: 0.15, emissive: '#ff9a4a', emissiveIntensity: 0 });
   const makeKey = (x, z, sharp, idx, off) => {
+    const keyDepth = !sharp && V.naturalKeyLength ? naturalCapD : capD;
+    const keyHoleD = !sharp && V.naturalKeyLength ? holeD + (naturalCapD - capD) : holeD;
+    const keyWellD = !sharp && V.naturalKeyLength ? wellD + (naturalCapD - capD) : wellD;
     if (V.keyRound) {
       // The well is wider than the hole so nothing shows through the gap.
       holes.push(holeStadium(x, z, roundR * 2 + 0.8, roundL + 0.8));
       add(new THREE.BoxGeometry(roundR * 2 + 2, 3, roundL + 2), darkMat, x, -3.8, z);
     } else {
-      holes.push(holeRect(x, z, holeW, holeD, 0.6));
-      add(new THREE.BoxGeometry(wellW, 3, wellD), darkMat, x, -2.4, z);
+      holes.push(holeRect(x, z, holeW, keyHoleD, 0.6));
+      add(new THREE.BoxGeometry(wellW, 3, keyWellD), darkMat, x, -2.4, z);
     }
-    const m = add(capGeo, keyMat(sharp ? charcoal : ivory), x, V.keyRound ? -ROUND_SINK : 1.6, z);
+    const keyGeometry = !sharp && V.naturalKeyLength ? (() => { const g = extrude(rr(new THREE.Shape(), 0, 0, capW, keyDepth, capR), 5, 0.8); g.translate(0, 0.8, 0); return g; })() : capGeo;
+    const m = add(keyGeometry, keyMat(sharp ? charcoal : ivory), x, V.keyRound ? -ROUND_SINK : 1.6, z);
     if (V.underKeyLed) { m.material.transparent = true; m.material.opacity = sharp ? 0.65 : 0.72; m.material.depthWrite = false; }
     const ctl = { type: 'key', id: (sharp ? 's' : 'n') + idx, sharp, off, depth: V.keyRound ? 1.2 : 3 };
     register(ctl, m); byOff.set(off, ctl);
