@@ -114,9 +114,20 @@ const L3 = {
   keyW: 0.75,
   keyR: 2.4,
 };
+// Idea B: Idea A's control layout with Idea 1's square mechanical-style keycaps.
+// Retain the 12 mm pitch and LED positions to compare switch aesthetics without
+// changing the panel dimensions or the rest of the control layout.
+const LB = {
+  ...L2,
+  keyRound: false,
+  keyW: 0.55, // 10.45 mm finished cap on 12 mm pitch; not full-size 1U
+  keyR: 1.5,
+  tips: { ...L2.tips, key: ['Key', 'Mechanical-style square keycap · switch type TBD'] },
+};
 // Add a design here. `id` is the #idea<id> hash and the variant key.
 export const IDEAS = [
   { id: 'A', label: 'Idea A', layout: L2 },
+  { id: 'B', label: 'Idea B', layout: LB },
   { id: '1', label: 'Idea 1', layout: L1 },
   { id: '3', label: 'Idea 3', layout: L3 },
 ];
