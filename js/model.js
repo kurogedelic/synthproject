@@ -16,7 +16,7 @@ const L1 = {
   knobs: [['level', 'pot', -123.6, -24.5, 7, 12], ['mode', 'enc', 61.8, -17.3, 6, 11], ['set1', 'enc', 82.7, -17.3, 6, 11],
     ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11], ['set4', 'enc', 145.5, -17.3, 6, 11]],
   slots: [61.8, 82.7, 103.6, 124.5, 145.5].map(x => [x, -30]),
-  lanyardHole: { x: 150, z: -34, r: 2.5 },
+  frontTrapezoids: [-132, 132], // paired openings on the lower front corners
 };
 // Idea 2, from the 200 x 100 mm panel drawing (origin at the panel center).
 // LCD: 1.9 inch IPS, 320 x 170, active area 42.6 x 22.6 mm in a 46 x 26 window.
@@ -382,14 +382,20 @@ export function buildModel(variant = 'A') {
     add(new THREE.BoxGeometry(11.4, 0.4, 3), darkMat, x, -1.6, z);
   });
 
-  // Idea 1 prototype's small lanyard/keyring opening, shown as a panel
-  // cutout. A structural through-hole in the shell needs CAD validation.
-  if (V.lanyardHole) {
-    const { x, z, r } = V.lanyardHole;
-    holes.push(holeCircle(x, z, r));
-    const recess = add(new THREE.CylinderGeometry(r, r, 1, 32), darkMat, x, -3.4, z);
-    recess.userData.tip = ['Lanyard hole', 'Prototype-inspired keyring opening · shell through-hole TBD'];
-    infos.push(recess);
+  // Two trapezoidal recesses on the front lower shell, as in the prototype.
+  // Rendered as dark openings with light rims; true through-holes require shell CAD.
+  if (V.frontTrapezoids) {
+    const faceZ = D / 2 + 0.32;
+    for (const x of V.frontTrapezoids) {
+      const shape = new THREE.Shape();
+      shape.moveTo(-14, 5); shape.lineTo(14, 5);
+      shape.lineTo(10, -5); shape.lineTo(-10, -5); shape.closePath();
+      const rim = new THREE.Mesh(new THREE.ShapeGeometry(shape), new THREE.MeshStandardMaterial({ color: '#d3d5d1', side: THREE.DoubleSide }));
+      rim.position.set(x, -12.5, faceZ); root.add(rim);
+      const inner = new THREE.Mesh(new THREE.ShapeGeometry(shape), darkMat);
+      inner.scale.set(0.82, 0.72, 1); inner.position.set(x, -12.5, faceZ + 0.04); root.add(inner);
+      inner.userData.tip = ['Front opening', 'Prototype-inspired trapezoidal opening · geometry TBD']; infos.push(inner);
+    }
   }
 
   // LCD
