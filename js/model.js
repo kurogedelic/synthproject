@@ -109,8 +109,10 @@ const B_SCALE = 19.05 / 12;
 const bx = x => x * B_SCALE;
 const LB = {
   ...L2,
-  W: 330,
+  W: 320, // 16 × 19.05 mm keys occupy 304.8 mm; 7.6 mm side margins
   pitch: 19.05,
+  underKeyLed: true,
+  ledZ: null,
   keyRound: false,
   keyW: 1,
   keyR: 2.2,
@@ -249,9 +251,16 @@ export function buildModel(variant = 'A') {
       add(new THREE.BoxGeometry(wellW, 3, wellD), darkMat, x, -2.4, z);
     }
     const m = add(capGeo, keyMat(sharp ? charcoal : ivory), x, V.keyRound ? -ROUND_SINK : 1.6, z);
+    if (V.underKeyLed) { m.material.transparent = true; m.material.opacity = sharp ? 0.65 : 0.72; m.material.depthWrite = false; }
     const ctl = { type: 'key', id: (sharp ? 's' : 'n') + idx, sharp, off, depth: V.keyRound ? 1.2 : 3 };
     register(ctl, m); byOff.set(off, ctl);
-    if (V.keyLed || V.ledZ) {
+    if (V.underKeyLed) {
+      // RGB source under a translucent keycap / transparent switch housing.
+      // A clear switch alone will not illuminate an opaque cap.
+      const led = new THREE.Mesh(new THREE.PlaneGeometry(5.5, 5.5).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#000000', toneMapped: false, side: THREE.DoubleSide }));
+      led.position.set(x, -1.25, z); root.add(led);
+      ctl.led = led.material; ctl.ledHue = (x + W / 2) / W * 0.85; ctl.glow = 0; leds.push(ctl);
+    } else if (V.keyLed || V.ledZ) {
       // NeoPixel window: a slot in the plate 3.6 mm behind the key, lit from below.
       const lz = V.ledZ ? V.ledZ[sharp ? 'sharp' : 'nat'] : z - roundL / 2 - 0.4 - 3.6;
       holes.push(holeRect(x, lz, LED_W, LED_D, LED_R));
