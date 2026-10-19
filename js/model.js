@@ -113,6 +113,7 @@ const LB = {
   ...L2,
   W: 310, // 16 x 19.05 mm pitch; ~2.6 mm nominal end margin per side
   pitch: 19.05,
+  natZ: 39, // move the white keys toward the front edge
   underKeyLed: true,
   ledZ: null,
   keyRound: false,
@@ -123,14 +124,14 @@ const LB = {
   tactLabels: { octd: 'OCT-', octu: 'OCT+', ...L2.tactLabels },
   sideLabels: {},
   joystick: { x: -138, z: -34.5, radius: 5.2 },
-  lcd: { ...L2.lcd, x: -33 },
+  lcd: { ...L1.lcd, x: -16, z: -32 }, // wide 110 x 27.5 mm Idea 1 display
   knobs: [
     ['level', 'pot', -114, -34.5, 7, 12, true],
-    ['mode', 'enc', -78, -34.5, 7, 11],
-    ['set1', 'enc', 30, -34.5, 7, 11],
-    ['set2', 'enc', 66, -34.5, 7, 11],
-    ['set3', 'enc', 102, -34.5, 7, 11],
-    ['set4', 'enc', 138, -34.5, 7, 11],
+    ['mode', 'enc', -90, -34.5, 7, 11],
+    ['set1', 'enc', 57, -34.5, 7, 11],
+    ['set2', 'enc', 82, -34.5, 7, 11],
+    ['set3', 'enc', 107, -34.5, 7, 11],
+    ['set4', 'enc', 132, -34.5, 7, 11],
   ],
   ports: Object.fromEntries(Object.entries(L2.ports).map(([id, cfg]) => [id, { ...cfg, at: cfg.face === 'back' ? bx(cfg.at) : cfg.at }])),
   backSticker: { ...L2.backSticker, x0: bx(L2.backSticker.x0), x1: bx(L2.backSticker.x1), items: L2.backSticker.items.map(([x, ...rest]) => [bx(x), ...rest]) },
