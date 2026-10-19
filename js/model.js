@@ -14,8 +14,9 @@ const L1 = {
   tact: { rec: [-77.3, 7.6], play: [-0.9, 7.6], save: [56, 7.6], octd: [133.6, 7.6], octu: [145.6, 7.6] },
   round: { power: [-141.8, -28.2, 2.2, 2.4], menu: [-106.4, -21.8, 4.2, 3], value: [43.6, -22.4, 5.4, 3] },
   knobs: [['level', 'pot', -123.6, -24.5, 7, 12], ['mode', 'enc', 61.8, -17.3, 6, 11], ['set1', 'enc', 82.7, -17.3, 6, 11],
-    ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11]],
-  slots: [61.8, 82.7, 103.6, 124.5].map(x => [x, -30]),
+    ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11], ['set4', 'enc', 145.5, -17.3, 6, 11]],
+  slots: [61.8, 82.7, 103.6, 124.5, 145.5].map(x => [x, -30]),
+  lanyardHole: { x: 150, z: -34, r: 2.5 },
 };
 // Idea 2, from the 200 x 100 mm panel drawing (origin at the panel center).
 // LCD: 1.9 inch IPS, 320 x 170, active area 42.6 x 22.6 mm in a 46 x 26 window.
@@ -380,6 +381,16 @@ export function buildModel(variant = 'A') {
     holes.push(holeRect(x, z, 12, 3.6, 1.6));
     add(new THREE.BoxGeometry(11.4, 0.4, 3), darkMat, x, -1.6, z);
   });
+
+  // Idea 1 prototype's small lanyard/keyring opening, shown as a panel
+  // cutout. A structural through-hole in the shell needs CAD validation.
+  if (V.lanyardHole) {
+    const { x, z, r } = V.lanyardHole;
+    holes.push(holeCircle(x, z, r));
+    const recess = add(new THREE.CylinderGeometry(r, r, 1, 32), darkMat, x, -3.4, z);
+    recess.userData.tip = ['Lanyard hole', 'Prototype-inspired keyring opening · shell through-hole TBD'];
+    infos.push(recess);
+  }
 
   // LCD
   holes.push(holeRect(LCD.x, LCD.z, LCD.win?.[0] ?? LCD.w + 4, LCD.win?.[1] ?? LCD.h + 3.5, 2));
