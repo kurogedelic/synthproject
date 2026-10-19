@@ -9,12 +9,13 @@ const PITCH = 19.05, PLATE_T = 3, BODY_H = 14.6;
 // mm, x right, z toward the player. Idea 1 follows the PCB layout.
 const L1 = {
   D: 80, natZ: 26.4, sharpZ: 7.6,
+  joystick: { x: -146, z: -23, radius: 5.2 },
   lcd: { x: -28.7, z: -21.8, w: 110, h: 27.5, cols: 320, rows: 80 },
   tact: { rec: [-77.3, 7.6], play: [-0.9, 7.6], save: [56, 7.6], octd: [133.6, 7.6], octu: [145.6, 7.6] },
   round: { power: [-141.8, -28.2, 2.2, 2.4], menu: [-106.4, -21.8, 4.2, 3], value: [43.6, -22.4, 5.4, 3] },
   knobs: [['level', 'pot', -123.6, -24.5, 7, 12], ['mode', 'enc', 61.8, -17.3, 6, 11], ['set1', 'enc', 82.7, -17.3, 6, 11],
-    ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11], ['set4', 'enc', 145.5, -17.3, 6, 11]],
-  slots: [61.8, 82.7, 103.6, 124.5, 145.5].map(x => [x, -30]),
+    ['set2', 'enc', 103.6, -17.3, 6, 11], ['set3', 'enc', 124.5, -17.3, 6, 11]],
+  slots: [61.8, 82.7, 103.6, 124.5].map(x => [x, -30]),
 };
 // Idea 2, from the 200 x 100 mm panel drawing (origin at the panel center).
 // LCD: 1.9 inch IPS, 320 x 170, active area 42.6 x 22.6 mm in a 46 x 26 window.
@@ -318,6 +319,17 @@ export function buildModel(variant = 'A') {
   if (V.knobLabels) {
     const kz = V.knobs[0][3];
     labelStrip(V.knobs.filter(k => V.knobLabels[k[0]]).map(k => [k[2], V.knobLabels[k[0]]]), kz + 11.5);
+  }
+
+  // Idea 1 prototype-inspired joystick. Mechanical representation only:
+  // MIDI pitch/mod mapping is intentionally left unassigned.
+  if (V.joystick) {
+    const { x, z, radius } = V.joystick;
+    holes.push(holeCircle(x, z, radius + 1.2));
+    add(new THREE.CylinderGeometry(radius + 1.3, radius + 1.3, 1.2, 40), darkMat, x, -0.9, z);
+    add(new THREE.CylinderGeometry(2.0, 2.0, 10, 24), new THREE.MeshStandardMaterial({ color: '#188c80', roughness: 0.48 }), x, 4.5, z);
+    const stick = add(new THREE.CylinderGeometry(2.6, 2.0, 2.0, 24), new THREE.MeshStandardMaterial({ color: '#b4e1d8', roughness: 0.48 }), x, 10.2, z);
+    stick.userData.tip = ['Joystick', 'Prototype-inspired control · mapping TBD']; infos.push(stick);
   }
 
   // round buttons
