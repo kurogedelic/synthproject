@@ -100,20 +100,6 @@ const L2 = {
     ['set2', 'enc', 38, -34.5, 7, 11], ['set3', 'enc', 62, -34.5, 7, 11], ['set4', 'enc', 86, -34.5, 7, 11]],
   slots: [],
 };
-// Idea 3 starts from Idea 2 (now Idea A). Finished key width is 75% of the current
-// 19 mm cap (17.4 mm profile plus the 0.8 mm bevel each side). Pitch is unchanged.
-// 2.4 mm corners on the ~12.7 mm profile suit a small hardware pad.
-const L3 = {
-  D: 150, natZ: 61.4, sharpZ: 42.6,
-  lcd: { x: -20, z: -50, w: 110, h: 27.5, cols: 320, rows: 80 },
-  tact: { rec: [90, -24], play: [114, -24], save: [138, -24], octd: [114, -6], octu: [138, -6] },
-  round: { power: [-143, -62, 2.2, 2.4], menu: [-125, -18, 4.2, 3], value: [64, -50, 5.4, 3] },
-  knobs: [['level', 'pot', -125, -44, 7, 12], ['set1', 'enc', 82.7, -50, 6, 11], ['set2', 'enc', 103.6, -50, 6, 11],
-    ['set3', 'enc', 124.5, -50, 6, 11], ['set4', 'enc', 145.5, -50, 6, 11]],
-  slots: [],
-  keyW: 0.75,
-  keyR: 2.4,
-};
 // Idea B: full-size 1U mechanical-style keycaps on 19.05 mm centers.
 // The 16-key row needs 304.8 mm center-to-center envelope including the end caps,
 // so the panel expands from 200 to 330 mm. The original 100 mm depth is retained.
@@ -141,7 +127,6 @@ export const IDEAS = [
   { id: 'A', label: 'Idea A', layout: L2 },
   { id: 'B', label: 'Idea B', layout: LB },
   { id: '1', label: 'Idea 1', layout: L1 },
-  { id: '3', label: 'Idea 3', layout: L3 },
 ];
 const RAD = Math.PI / 180;
 
