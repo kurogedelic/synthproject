@@ -114,9 +114,32 @@ const L3 = {
   keyW: 0.75,
   keyR: 2.4,
 };
+// Idea B: full-size 1U mechanical-style keycaps on 19.05 mm centers.
+// The 16-key row needs 304.8 mm center-to-center envelope including the end caps,
+// so the panel expands from 200 to 330 mm. The original 100 mm depth is retained.
+// Scale horizontal control locations to retain the Idea A hierarchy; actual PCB
+// routing, switch footprints and keycap clearances still require engineering.
+const B_SCALE = 19.05 / 12;
+const bx = x => x * B_SCALE;
+const LB = {
+  ...L2,
+  W: 330,
+  pitch: 19.05,
+  keyRound: false,
+  keyW: 1,
+  keyR: 2.2,
+  lcd: { ...L2.lcd, x: bx(L2.lcd.x) },
+  tact: Object.fromEntries(Object.entries(L2.tact).map(([id, [x, z]]) => [id, [bx(x), z]])),
+  knobs: L2.knobs.map(([id, type, x, z, r, h, mark]) => [id, type, bx(x), z, r, h, mark]),
+  ports: Object.fromEntries(Object.entries(L2.ports).map(([id, cfg]) => [id, { ...cfg, at: cfg.face === 'back' ? bx(cfg.at) : cfg.at }])),
+  backSticker: { ...L2.backSticker, x0: bx(L2.backSticker.x0), x1: bx(L2.backSticker.x1), items: L2.backSticker.items.map(([x, ...rest]) => [bx(x), ...rest]) },
+  pcbSeam: { ...L2.pcbSeam, pillars: L2.pcbSeam.pillars.map(bx) },
+  tips: { ...L2.tips, key: ['Key', '1U mechanical-style keycap · 19.05 mm pitch · switch TBD'] },
+};
 // Add a design here. `id` is the #idea<id> hash and the variant key.
 export const IDEAS = [
   { id: 'A', label: 'Idea A', layout: L2 },
+  { id: 'B', label: 'Idea B', layout: LB },
   { id: '1', label: 'Idea 1', layout: L1 },
   { id: '3', label: 'Idea 3', layout: L3 },
 ];
