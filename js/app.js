@@ -1,13 +1,13 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/RoomEnvironment.js';
-import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=73';
-import { Synth, PAGES, PRESETS, paramMax } from './synth.js?v=73';
-import { Drums, PIECES, DRUM_KNOBS, GM, defaultDrums } from './drums.js?v=73';
-import { Midi } from './midi.js?v=73';
-import { Lcd } from './lcd.js?v=73';
-import { drawScreen, noteName } from './screens.js?v=73';
-import { initUI } from './ui.js?v=73';
+import { buildModel, BASE_NOTE, IDEAS } from './model.js?v=74';
+import { Synth, PAGES, PRESETS, paramMax } from './synth.js?v=74';
+import { Drums, PIECES, DRUM_KNOBS, GM, defaultDrums } from './drums.js?v=74';
+import { Midi } from './midi.js?v=74';
+import { Lcd } from './lcd.js?v=74';
+import { drawScreen, noteName } from './screens.js?v=74';
+import { initUI } from './ui.js?v=74';
 
 const KEY = 'synthproject:v3';
 const DEFAULTS = {
