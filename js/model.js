@@ -108,22 +108,34 @@ const L2 = {
 // routing, switch footprints and keycap clearances still require engineering.
 const B_SCALE = 19.05 / 12;
 const bx = x => x * B_SCALE;
+const B_TACT_IDS = ['octd', 'octu', 'shift', 'home', ...F_KEYS, 'play', 'rec'];
 const LB = {
   ...L2,
-  W: 320, // 16 × 19.05 mm keys occupy 304.8 mm; 7.6 mm side margins
+  W: 310, // 16 x 19.05 mm pitch; ~2.6 mm nominal end margin per side
   pitch: 19.05,
   underKeyLed: true,
   ledZ: null,
   keyRound: false,
   keyW: 1,
   keyR: 2.2,
-  lcd: { ...L2.lcd, x: bx(L2.lcd.x) },
-  tact: Object.fromEntries(Object.entries(L2.tact).map(([id, [x, z]]) => [id, [bx(x), z]])),
-  knobs: L2.knobs.map(([id, type, x, z, r, h, mark]) => [id, type, bx(x), z, r, h, mark]),
+  // Eighteen buttons share one row, evenly distributed across the panel.
+  tact: Object.fromEntries(B_TACT_IDS.map((id, i) => [id, [(i - 8.5) * 17, -9.5]])),
+  tactLabels: { octd: 'OCT-', octu: 'OCT+', ...L2.tactLabels },
+  sideLabels: {},
+  joystick: { x: -138, z: -34.5, radius: 5.2 },
+  lcd: { ...L2.lcd, x: -33 },
+  knobs: [
+    ['level', 'pot', -114, -34.5, 7, 12, true],
+    ['mode', 'enc', -78, -34.5, 7, 11],
+    ['set1', 'enc', 30, -34.5, 7, 11],
+    ['set2', 'enc', 66, -34.5, 7, 11],
+    ['set3', 'enc', 102, -34.5, 7, 11],
+    ['set4', 'enc', 138, -34.5, 7, 11],
+  ],
   ports: Object.fromEntries(Object.entries(L2.ports).map(([id, cfg]) => [id, { ...cfg, at: cfg.face === 'back' ? bx(cfg.at) : cfg.at }])),
   backSticker: { ...L2.backSticker, x0: bx(L2.backSticker.x0), x1: bx(L2.backSticker.x1), items: L2.backSticker.items.map(([x, ...rest]) => [bx(x), ...rest]) },
   pcbSeam: { ...L2.pcbSeam, pillars: L2.pcbSeam.pillars.map(bx) },
-  tips: { ...L2.tips, key: ['Key', '1U mechanical-style keycap · 19.05 mm pitch · switch TBD'] },
+  tips: { ...L2.tips, key: ['Key', '1U mechanical-style keycap · 19.05 mm pitch · switch TBD'], joystick: ['Joystick', 'Control mapping TBD'] },
 };
 // Add a design here. `id` is the #idea<id> hash and the variant key.
 export const IDEAS = [
