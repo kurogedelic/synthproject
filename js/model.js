@@ -145,6 +145,7 @@ const LB = {
 const L3 = {
   ...L1,
   keyRound: true, keyWidth: 8, keyLen: 17,
+  natZ: 24.5,
   keyLed: true, ledW: 6, ledD: 2, ledR: 0.8,
   lcd: { ...L1.lcd, x: -23, z: -23 },
   joystick: { ...L1.joystick, x: 1, z: -23 },
@@ -165,7 +166,7 @@ const L3 = {
     menu: [-143, -23, 4.2, 3],
     value: [-142, 1, 5.4, 3],
   },
-  slots: [[48, -35], [70, -35], [92, -35], [114, -35], [136, -35]],
+  slots: [],
   frontTrapezoids: [-132, 132],
   tips: {
     key: ['Key', 'Choc V1 switch · custom narrow stadium keycap (concept)'],
