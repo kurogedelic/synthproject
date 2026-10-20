@@ -147,7 +147,7 @@ const L3 = {
   D: 110, // Extra depth for separate screen, controls and key rows.
   keyRound: true, keyWidth: 8, keyLen: 17,
   natZ: 39, sharpZ: 13,
-  keyLed: true, ledW: 6, ledD: 2, ledR: 0.8,
+  keyLed: false, underKeyLed: false, ledZ: null,
   lcd: { ...L1.lcd, x: -23, z: -35 },
   joystick: { ...L1.joystick, x: 42, z: -35 },
   knobs: [
