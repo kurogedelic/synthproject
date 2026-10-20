@@ -140,11 +140,45 @@ const LB = {
   pcbSeam: { ...L2.pcbSeam, pillars: L2.pcbSeam.pillars.map(bx) },
   tips: { ...L2.tips, key: ['Key', '1U mechanical-style keycap · 19.05 mm pitch · switch TBD'], joystick: ['Joystick', 'Control mapping TBD'] },
 };
+// Idea 2: Jimmy's V2 sketch, derived from Idea 1.
+// Choc V1 switches with narrow stadium keycaps; dimensions are provisional.
+const L3 = {
+  ...L1,
+  keyRound: true, keyWidth: 8, keyLen: 17,
+  keyLed: true, ledW: 6, ledD: 2, ledR: 0.8,
+  lcd: { ...L1.lcd, x: -23, z: -23 },
+  joystick: { ...L1.joystick, x: 1, z: -23 },
+  knobs: [
+    ['level', 'pot', -124, -23, 7, 12],
+    ['mode', 'enc', -105, -23, 7, 11],
+    ['set1', 'enc', 48, -23, 7, 11],
+    ['set2', 'enc', 70, -23, 7, 11],
+    ['set3', 'enc', 92, -23, 7, 11],
+    ['set4', 'enc', 114, -23, 7, 11],
+  ],
+  tact: {
+    rec: [145, -4], play: [133, -4],
+    save: [48, -35], octd: [70, -35], octu: [92, -35],
+  },
+  round: {
+    power: [-142, -33, 2.2, 2.4],
+    menu: [-143, -23, 4.2, 3],
+    value: [-142, 1, 5.4, 3],
+  },
+  slots: [[48, -35], [70, -35], [92, -35], [114, -35], [136, -35]],
+  frontTrapezoids: [-132, 132],
+  tips: {
+    key: ['Key', 'Choc V1 switch · custom narrow stadium keycap (concept)'],
+    led: ['Key LED', 'Backlight concept'],
+    joystick: ['Joystick', 'Control mapping TBD'],
+  },
+};
 // Add a design here. `id` is the #idea<id> hash and the variant key.
 export const IDEAS = [
   { id: 'A', label: 'Idea A', layout: L2 },
   { id: 'B', label: 'Idea B', layout: LB },
   { id: '1', label: 'Idea 1', layout: L1 },
+  { id: '2', label: 'Idea 2', layout: L3 },
 ];
 const RAD = Math.PI / 180;
 
